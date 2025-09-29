@@ -18,7 +18,7 @@
  */
 export interface User {
   id: string;
-  email: string;
+  email: string | null; // null si KYC non fait
   kyc: {
     status: 'pending' | 'verified' | 'rejected';
     level: number;

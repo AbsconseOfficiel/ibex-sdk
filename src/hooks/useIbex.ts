@@ -1,21 +1,24 @@
 // Copyright 2025 Dylan Enjolvin
 // Licensed under the Apache License, Version 2.0
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-// GitHub: https://github.com/AbsconseOfficiel
-// LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
 /**
- * Hook principal IBEX
- * API unifiée et simplifiée conforme au Swagger IBEX
+ * Hook principal pour l'intégration IBEX
+ *
+ * TODO: Ajouter la gestion des erreurs réseau
+ * TODO: Implémenter le cache des données
+ * TODO: Ajouter les tests unitaires
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IbexClient } from '../core/IbexClient';
+import { WebSocketManager } from '../services/WebSocketManager';
+import { WebSocketConfig } from '../services/WebSocketService';
 import { logger } from '../utils/logger';
-import type { IbexConfig, User, Wallet, Transaction, Operation, Balance } from '../types';
+import type { IbexConfig, User, Wallet, Operation, Balance, Transaction } from '../types';
 
 // ============================================================================
-// TYPES UNIFIÉS
+// TYPES INTERNES
 // ============================================================================
 
 interface IbexData {
@@ -37,19 +40,18 @@ interface IbexReturn {
   // État
   isLoading: boolean;
   error: string | null;
+  isWebSocketConnected: boolean;
 
-  // Actions d'authentification
+  // Actions
   signIn: () => Promise<void>;
   signUp: (passkeyName?: string) => Promise<void>;
   logout: () => Promise<void>;
-
-  // Actions financières
   send: (amount: number, to: string) => Promise<void>;
   receive: () => Promise<string>;
   withdraw: (amount: number, iban: string) => Promise<void>;
-
-  // Actions KYC
   startKyc: (language?: string) => Promise<string>;
+  refresh: () => Promise<void>;
+  clearError: () => void;
 
   // Actions IBEX Safe
   getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>;
@@ -66,8 +68,6 @@ interface IbexReturn {
   ) => Promise<any>;
 
   // Utilitaires
-  refresh: () => Promise<void>;
-  clearError: () => void;
   getKycStatusLabel: (level: number) => string;
   getOperationTypeLabel: (type: string) => string;
   getOperationStatusLabel: (status: string) => string;
@@ -77,61 +77,69 @@ interface IbexReturn {
 // HOOK PRINCIPAL
 // ============================================================================
 
-/**
- * Hook IBEX optimisé
- * API unifiée conforme au Swagger IBEX
- */
 export function useIbex(config: IbexConfig): IbexReturn {
   const [client] = useState(() => new IbexClient(config));
-  const [data, setData] = useState<IbexData | null>(null);
+  const [data, setData] = useState<IbexData>({
+    user: null,
+    wallet: null,
+    balance: { amount: 0, symbol: 'EURe', usdValue: 0 },
+    transactions: [],
+    operations: [],
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
+
+  const isInitialized = useRef(false);
+  const wsCallbacksRef = useRef<any>(null);
 
   // ========================================================================
-  // UTILITAIRES
+  // UTILITAIRES STABLES
   // ========================================================================
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  const handleApiCall = useCallback(
-    async <T>(apiCall: () => Promise<T>, errorMessage: string, fallback?: T): Promise<T | null> => {
-      try {
-        return await apiCall();
-      } catch (error) {
-        logger.error('API', errorMessage, error);
-        setError(error instanceof Error ? error.message : errorMessage);
-        return fallback || null;
-      }
-    },
-    []
-  );
+  const handleError = useCallback((error: any, message: string) => {
+    logger.error('HOOK', message, error);
+    setError(error instanceof Error ? error.message : message);
+  }, []);
 
   // ========================================================================
-  // FONCTIONS DE TRANSFORMATION
+  // TRANSFORMATIONS DE DONNÉES
   // ========================================================================
 
-  const transformUser = useCallback((userDetails: any): User | null => {
-    if (!userDetails) return null;
+  // Déduplique les transactions par ID
+  const deduplicateTransactions = useCallback((transactions: Transaction[]): Transaction[] => {
+    const seen = new Set<string>();
+    return transactions.filter(tx => {
+      if (seen.has(tx.id)) return false;
+      seen.add(tx.id);
+      return true;
+    });
+  }, []);
 
-    const kyLevel = userDetails.ky || '0';
-    const level = parseInt(kyLevel, 10);
+  const transformUser = useCallback((userData: any): User | null => {
+    if (!userData) return null;
+
+    const kycLevel = parseInt(userData.ky || '0', 10);
+    const email = kycLevel >= 5 ? userData.email : null;
 
     return {
-      id: userDetails.id,
-      email: userDetails.email || userDetails.id,
+      id: userData.id,
+      email,
       kyc: {
-        status: level >= 5 ? 'verified' : 'pending',
-        level,
+        status: kycLevel >= 5 ? 'verified' : 'pending',
+        level: kycLevel,
       },
     };
   }, []);
 
-  const transformWallet = useCallback((userDetails: any): Wallet | null => {
-    if (!userDetails?.signers?.[0]?.safes?.[0]) return null;
+  const transformWallet = useCallback((userData: any): Wallet | null => {
+    if (!userData?.signers?.[0]?.safes?.[0]) return null;
 
-    const safe = userDetails.signers[0].safes[0];
+    const safe = userData.signers[0].safes[0];
     return {
       address: safe.address,
       isConnected: true,
@@ -139,178 +147,209 @@ export function useIbex(config: IbexConfig): IbexReturn {
     };
   }, []);
 
-  const transformBalance = useCallback((balanceData: any): Balance => {
-    if (!balanceData) return { amount: 0, symbol: 'EURe' };
+  // Convertit les données de transaction en format standard
+  const transformTransaction = useCallback((tx: any): Transaction => {
+    // Gère les deux formats : historique (transaction_data) et temps réel (new_transaction)
+    let transactionData;
+    let isNewTransaction = false;
 
-    let amount = 0;
+    if (tx.newTransaction) {
+      // Format new_transaction : les données sont dans tx.newTransaction
+      transactionData = tx.newTransaction;
+      isNewTransaction = true;
+    } else if (tx.transaction) {
+      // Format transaction_data : les données sont dans tx.transaction
+      transactionData = tx.transaction;
+    } else {
+      // Format direct
+      transactionData = tx;
+    }
 
-    // Structure de l'API bcreader: { balance: { balance: "22211.88889" } }
-    if (balanceData.balance?.balance !== undefined) {
-      amount = parseFloat(balanceData.balance.balance || '0');
+    // Calcul du montant selon le format
+    let amount;
+    if (isNewTransaction) {
+      // Pour new_transaction : la valeur est déjà en EURe (pas de conversion wei)
+      amount = parseFloat(transactionData.value || '0');
+    } else {
+      // Pour transaction_data : convertir wei en EURe (1 EURe = 10^18 wei)
+      const amountInWei = transactionData.value || '0';
+      amount =
+        typeof amountInWei === 'string' ? parseFloat(amountInWei) / Math.pow(10, 18) : amountInWei;
     }
-    // Structure directe: { balance: "123.45" }
-    else if (balanceData.balance !== undefined) {
-      amount = parseFloat(balanceData.balance || '0');
-    }
-    // Structure avec amount direct
-    else if (balanceData.amount !== undefined) {
-      amount = parseFloat(balanceData.amount || '0');
-    }
+
+    // Utilise le hash comme ID unique pour éviter les doublons
+    const id =
+      transactionData.transactionHash || transactionData.hash || String(transactionData.id);
+
+    const result = {
+      id,
+      amount,
+      type: transactionData.direction === 'IN' ? 'IN' : 'OUT',
+      status: 'confirmed' as const,
+      date: transactionData.timestamp,
+      hash: transactionData.transactionHash || transactionData.hash,
+      from: transactionData.from,
+      to: transactionData.to,
+    };
+
+    return result as Transaction;
+  }, []);
+
+  const transformOperation = useCallback((op: any): Operation => {
+    // Les opérations utilisent déjà le bon format (pas de conversion wei)
+    const amount = parseFloat(op.data?.params?.amount || '0');
 
     return {
-      amount: isNaN(amount) ? 0 : amount,
-      symbol: 'EURe',
-      usdValue: balanceData.usdValue ? parseFloat(balanceData.usdValue) : 0,
-    };
-  }, []);
-
-  const transformTransactions = useCallback((txData: any[]): Transaction[] => {
-    if (!Array.isArray(txData)) return [];
-
-    return txData.map(tx => {
-      // Essayer plusieurs champs pour le montant
-      let amount = 0;
-      if (tx.valueFormatted !== undefined) {
-        amount = parseFloat(tx.valueFormatted);
-      } else if (tx.value !== undefined) {
-        amount = parseFloat(tx.value);
-      } else if (tx.amount !== undefined) {
-        amount = parseFloat(tx.amount);
-      }
-
-      return {
-        id: String(tx.id || tx.hash || tx.transactionHash),
-        amount: isNaN(amount) ? 0 : amount,
-        type: tx.direction === 'IN' ? 'IN' : 'OUT',
-        status: mapTransactionStatus(tx.status),
-        date: tx.timestamp || tx.createdAt || tx.date,
-        hash: tx.hash || tx.transactionHash,
-        from: tx.from,
-        to: tx.to,
-      };
-    });
-  }, []);
-
-  const transformOperations = useCallback((opData: any[]): Operation[] => {
-    if (!Array.isArray(opData)) return [];
-
-    return opData.map(op => {
-      // Utiliser le statut de safeOperation si disponible, sinon le statut principal
-      const actualStatus = op.safeOperation?.status || op.status;
-
-      const operation: Operation = {
-        id: op.id,
-        type: mapOperationType(op.type),
-        status: mapOperationStatus(actualStatus),
-        amount: op.amount ? parseFloat(op.amount) : 0,
-        createdAt: op.createdAt,
-      };
-
-      if (op.safeOperation) {
-        operation.safeOperation = {
+      id: op.id,
+      type: op.type as any,
+      status: op.safeOperation?.status || op.status || 'unknown',
+      amount: amount,
+      createdAt: op.createdAt,
+      ...(op.safeOperation && {
+        safeOperation: {
           userOpHash: op.safeOperation.userOpHash,
           status: op.safeOperation.status,
-        };
-      }
-
-      return operation;
-    });
+        },
+      }),
+    };
   }, []);
 
   // ========================================================================
-  // FONCTIONS DE CHARGEMENT
+  // CALLBACKS WEBSOCKET
   // ========================================================================
 
-  const loadCoreData = useCallback(async () => {
-    const userDetails = await handleApiCall(
-      () => client.getUserDetails(),
-      'Erreur lors du chargement des données utilisateur'
-    );
+  // Crée les callbacks une seule fois pour éviter les re-renders
+  const createWebSocketCallbacks = useCallback(() => {
+    if (wsCallbacksRef.current) return wsCallbacksRef.current;
 
-    if (!userDetails) throw new Error('Données utilisateur non disponibles');
+    const callbacks = {
+      onAuthSuccess: (data: any) => {
+        logger.success('WebSocket', 'Authentifié avec succès', data);
+      },
 
-    return {
-      user: transformUser(userDetails),
-      wallet: transformWallet(userDetails),
+      // Met à jour le solde quand reçu via WebSocket
+      onBalanceUpdate: (data: any) => {
+        setData(prev => ({
+          ...prev,
+          balance: {
+            amount: parseFloat(data.balance) || 0,
+            symbol: 'EURe',
+            usdValue: 0,
+          },
+        }));
+      },
+
+      // Ajoute une nouvelle transaction à la liste (évite les doublons)
+      onNewTransaction: (data: any) => {
+        const transaction = transformTransaction(data);
+
+        setData(prev => {
+          // Vérifie si la transaction existe déjà
+          const exists = prev.transactions.some(tx => tx.id === transaction.id);
+          if (exists) return prev;
+
+          // Ajoute la nouvelle transaction et déduplique
+          const newTransactions = [transaction, ...prev.transactions];
+          const deduplicated = deduplicateTransactions(newTransactions);
+
+          return {
+            ...prev,
+            transactions: deduplicated.slice(0, 50), // Limite à 50 transactions
+          };
+        });
+      },
+
+      onUserData: (userData: any) => {
+        setData(prev => ({
+          ...prev,
+          user: transformUser(userData),
+          wallet: transformWallet(userData),
+        }));
+      },
+
+      onConnectionChange: (connected: boolean) => {
+        setIsWebSocketConnected(connected);
+      },
+
+      onError: (errorMessage: string) => {
+        setError(errorMessage);
+      },
     };
-  }, [client, handleApiCall, transformUser, transformWallet]);
 
-  const loadBalance = useCallback(
-    async (walletAddress?: string): Promise<Balance> => {
-      const balanceData = await handleApiCall(
-        () => client.getBalances(walletAddress),
-        'Erreur lors du chargement de la balance',
-        { balance: '0' }
-      );
+    wsCallbacksRef.current = callbacks;
+    return callbacks;
+  }, [transformTransaction, transformUser, transformWallet, deduplicateTransactions]);
 
-      return transformBalance(balanceData);
+  // ========================================================================
+  // INITIALISATION WEBSOCKET
+  // ========================================================================
+
+  const initializeWebSocket = useCallback(
+    async (jwtToken: string) => {
+      const wsConfig: WebSocketConfig = {
+        apiUrl: config.baseURL.replace('http', 'ws') + '/ws',
+        jwtToken,
+        clientName: 'IBEX SDK',
+      };
+
+      const callbacks = createWebSocketCallbacks();
+      await WebSocketManager.connect(wsConfig, callbacks);
     },
-    [client, handleApiCall, transformBalance]
+    [config.baseURL, createWebSocketCallbacks]
   );
 
-  const loadOperations = useCallback(async (): Promise<Operation[]> => {
-    const opData = await handleApiCall(
-      () => client.getUserOperations(),
-      'Erreur lors du chargement des opérations',
-      { data: [] }
-    );
+  // ========================================================================
+  // CHARGEMENT INITIAL
+  // ========================================================================
 
-    const operations = opData?.data || opData || [];
-    return transformOperations(Array.isArray(operations) ? operations : []);
-  }, [client, handleApiCall, transformOperations]);
+  const loadInitialData = useCallback(async () => {
+    if (isInitialized.current) return;
 
-  const loadTransactions = useCallback(
-    async (walletAddress: string): Promise<Transaction[]> => {
-      if (!walletAddress) return [];
+    isInitialized.current = true;
+    setIsLoading(true);
 
-      const txData = await handleApiCall(
-        () => client.getTransactions({ address: walletAddress, limit: 50 }),
-        'Erreur lors du chargement des transactions',
-        { data: [] }
-      );
-
-      const transactions = txData?.data || txData || [];
-      return transformTransactions(Array.isArray(transactions) ? transactions : []);
-    },
-    [client, handleApiCall, transformTransactions]
-  );
-
-  const loadAllData = useCallback(async () => {
     try {
-      logger.api('Chargement de toutes les données');
+      logger.api('Chargement initial');
 
-      // 1. Charger les données de base
-      const coreData = await loadCoreData();
-      logger.debug('CORE', 'Données de base chargées', coreData);
+      // Vérifie l'authentification avant de charger les données
+      const token = client.getToken();
+      if (!token) {
+        logger.debug('HOOK', 'Pas de token - Utilisateur non authentifié');
+        setIsLoading(false);
+        return;
+      }
 
-      // 2. Charger les données financières en parallèle
-      const [balance, operations] = await Promise.all([
-        loadBalance(coreData.wallet?.address),
-        loadOperations(),
-      ]);
-      logger.debug('FINANCIAL', 'Données financières chargées', { balance, operations });
+      // Charge les opérations depuis l'API
+      try {
+        const opData = await client.getUserOperations();
+        const operations = (opData?.data || [])
+          .filter((op: any) => {
+            // Filtre seulement les opérations exécutées
+            const safeStatus = op.safeOperation?.status;
+            return safeStatus === 'EXECUTED';
+          })
+          .map(transformOperation);
 
-      // 3. Charger les transactions
-      const transactions = await loadTransactions(coreData.wallet?.address || '');
-      logger.debug('TX', 'Transactions chargées', { count: transactions.length });
+        setData(prev => ({
+          ...prev,
+          operations,
+        }));
+      } catch (opError) {
+        logger.debug('HOOK', 'Erreur lors du chargement des opérations', opError);
+        // Continue même si les opérations échouent
+      }
 
-      // 4. Mettre à jour l'état
-      setData({
-        user: coreData.user,
-        wallet: coreData.wallet,
-        balance,
-        operations,
-        transactions,
-      });
+      // Initialise le WebSocket pour les mises à jour temps réel
+      await initializeWebSocket(token);
+      setIsWebSocketConnected(WebSocketManager.connected);
 
-      logger.success('Toutes les données chargées', 'Chargement terminé');
+      logger.success('Chargement', 'Données initiales chargées');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erreur de chargement';
-      setError(message);
-      logger.error('LOAD', 'Erreur lors du chargement', error);
-      throw error;
+      handleError(error, 'Erreur de chargement initial');
+    } finally {
+      setIsLoading(false);
     }
-  }, [loadCoreData, loadBalance, loadOperations, loadTransactions]);
+  }, [client, transformOperation, initializeWebSocket, handleError]);
 
   // ========================================================================
   // ACTIONS PUBLIQUES
@@ -319,42 +358,32 @@ export function useIbex(config: IbexConfig): IbexReturn {
   const signIn = useCallback(async () => {
     setIsLoading(true);
     clearError();
-    logger.auth('Tentative de connexion');
 
     try {
       await client.signIn();
-      logger.success('Connexion réussie', 'Connexion réussie');
-      await loadAllData();
+      await loadInitialData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erreur de connexion';
-      setError(message);
-      logger.error('AUTH', 'Erreur de connexion', error);
-      throw error;
+      handleError(error, 'Erreur de connexion');
     } finally {
       setIsLoading(false);
     }
-  }, [client, loadAllData, clearError]);
+  }, [client, loadInitialData, clearError, handleError]);
 
   const signUp = useCallback(
     async (passkeyName?: string) => {
       setIsLoading(true);
       clearError();
-      logger.auth("Tentative d'inscription");
 
       try {
         await client.signUp(passkeyName);
-        logger.success('Inscription réussie', 'Inscription réussie');
-        await loadAllData();
+        await loadInitialData();
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erreur d'inscription";
-        setError(message);
-        logger.error('AUTH', "Erreur d'inscription", error);
-        throw error;
+        handleError(error, "Erreur d'inscription");
       } finally {
         setIsLoading(false);
       }
     },
-    [client, loadAllData, clearError]
+    [client, loadInitialData, clearError, handleError]
   );
 
   const logout = useCallback(async () => {
@@ -363,55 +392,46 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
     try {
       await client.logout();
+      WebSocketManager.disconnect();
     } finally {
-      setData(null);
+      setData({
+        user: null,
+        wallet: null,
+        balance: { amount: 0, symbol: 'EURe', usdValue: 0 },
+        transactions: [],
+        operations: [],
+      });
+      isInitialized.current = false;
       setIsLoading(false);
     }
   }, [client, clearError]);
 
   const send = useCallback(
     async (amount: number, to: string) => {
-      if (!data?.wallet?.address) throw new Error('Portefeuille non connecté');
+      if (!data.wallet?.address) throw new Error('Portefeuille non connecté');
 
       setIsLoading(true);
       clearError();
 
       try {
         await client.transferEURe(data.wallet.address, 421614, to, amount.toString());
-
-        // Mettre à jour optimistiquement
-        setData(prev =>
-          prev
-            ? {
-                ...prev,
-                balance: { ...prev.balance, amount: prev.balance.amount - amount },
-              }
-            : null
-        );
-
-        // Recharger les données
-        await loadAllData();
-        logger.success(`Envoi de ${amount}€ effectué`, 'Transaction réussie');
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erreur d'envoi";
-        setError(message);
-        logger.error('SEND', "Erreur d'envoi", error);
-        throw error;
+        handleError(error, "Erreur d'envoi");
       } finally {
         setIsLoading(false);
       }
     },
-    [data?.wallet?.address, client, loadAllData, clearError]
+    [data.wallet?.address, client, clearError, handleError]
   );
 
   const receive = useCallback(async (): Promise<string> => {
-    if (!data?.wallet?.address) throw new Error('Portefeuille non connecté');
+    if (!data.wallet?.address) throw new Error('Portefeuille non connecté');
     return data.wallet.address;
-  }, [data?.wallet?.address]);
+  }, [data.wallet?.address]);
 
   const withdraw = useCallback(
     async (amount: number, iban: string) => {
-      if (!data?.wallet?.address) throw new Error('Portefeuille non connecté');
+      if (!data.wallet?.address) throw new Error('Portefeuille non connecté');
 
       setIsLoading(true);
       clearError();
@@ -424,45 +444,27 @@ export function useIbex(config: IbexConfig): IbexReturn {
           iban,
           'Retrait IBEX'
         );
-
-        // Mettre à jour optimistiquement
-        setData(prev =>
-          prev
-            ? {
-                ...prev,
-                balance: { ...prev.balance, amount: prev.balance.amount - amount },
-              }
-            : null
-        );
-
-        // Recharger les données
-        await loadAllData();
-        logger.success(`Retrait de ${amount}€ effectué`, 'Retrait réussi');
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Erreur de retrait';
-        setError(message);
-        logger.error('WITHDRAW', 'Erreur de retrait', error);
-        throw error;
+        handleError(error, 'Erreur de retrait');
       } finally {
         setIsLoading(false);
       }
     },
-    [data?.wallet?.address, client, loadAllData, clearError]
+    [data.wallet?.address, client, clearError, handleError]
   );
 
   const startKyc = useCallback(
     async (language: string = 'fr'): Promise<string> => {
-      const kycUrl = await handleApiCall(
-        () => client.createKycRedirectUrl(language),
-        'Erreur lors du démarrage du KYC'
-      );
-
-      if (!kycUrl) throw new Error('Impossible de démarrer le KYC');
-
-      logger.kyc('URL KYC reçue', { kycUrl });
-      return kycUrl;
+      try {
+        const kycUrl = await client.createKycRedirectUrl(language);
+        logger.kyc('URL KYC reçue', { kycUrl });
+        return kycUrl;
+      } catch (error) {
+        handleError(error, 'Erreur KYC');
+        throw error;
+      }
     },
-    [client, handleApiCall]
+    [client, handleError]
   );
 
   const refresh = useCallback(async () => {
@@ -470,15 +472,13 @@ export function useIbex(config: IbexConfig): IbexReturn {
     clearError();
 
     try {
-      await loadAllData();
+      await loadInitialData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erreur de rafraîchissement';
-      setError(message);
-      logger.error('REFRESH', 'Erreur de rafraîchissement', error);
+      handleError(error, 'Erreur de rafraîchissement');
     } finally {
       setIsLoading(false);
     }
-  }, [loadAllData, clearError]);
+  }, [loadInitialData, clearError, handleError]);
 
   // ========================================================================
   // ACTIONS IBEX SAFE
@@ -486,36 +486,38 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
   const getUserPrivateData = useCallback(
     async (externalUserId: string): Promise<Record<string, any>> => {
-      const result = await handleApiCall(
-        () => client.getUserPrivateData(externalUserId),
-        'Erreur lors de la récupération des données privées',
-        {}
-      );
-      return result || {};
+      try {
+        return await client.getUserPrivateData(externalUserId);
+      } catch (error) {
+        handleError(error, 'Erreur récupération données privées');
+        return {};
+      }
     },
-    [client, handleApiCall]
+    [client, handleError]
   );
 
   const saveUserPrivateData = useCallback(
     async (externalUserId: string, data: Record<string, any>): Promise<{ success: boolean }> => {
-      const result = await handleApiCall(
-        () => client.saveUserPrivateData(externalUserId, data),
-        'Erreur lors de la sauvegarde des données privées',
-        { success: false }
-      );
-      return result || { success: false };
+      try {
+        return await client.saveUserPrivateData(externalUserId, data);
+      } catch (error) {
+        handleError(error, 'Erreur sauvegarde données privées');
+        return { success: false };
+      }
     },
-    [client, handleApiCall]
+    [client, handleError]
   );
 
   const validateEmail = useCallback(
     async (email: string, externalUserId: string): Promise<any> => {
-      return handleApiCall(
-        () => client.validateEmail(email, externalUserId),
-        "Erreur lors de la validation de l'email"
-      );
+      try {
+        return await client.validateEmail(email, externalUserId);
+      } catch (error) {
+        handleError(error, 'Erreur validation email');
+        return null;
+      }
     },
-    [client, handleApiCall]
+    [client, handleError]
   );
 
   const confirmEmail = useCallback(
@@ -525,28 +527,29 @@ export function useIbex(config: IbexConfig): IbexReturn {
       externalUserId: string,
       options: any = {}
     ): Promise<any> => {
-      return handleApiCall(
-        () => client.confirmEmail(email, code, externalUserId, options),
-        "Erreur lors de la confirmation de l'email"
-      );
+      try {
+        return await client.confirmEmail(email, code, externalUserId, options);
+      } catch (error) {
+        handleError(error, 'Erreur confirmation email');
+        return null;
+      }
     },
-    [client, handleApiCall]
+    [client, handleError]
   );
 
   // ========================================================================
-  // CHARGEMENT INITIAL
+  // EFFECT PRINCIPAL
   // ========================================================================
 
   useEffect(() => {
     let mounted = true;
 
-    const loadInitialData = async () => {
+    const loadData = async () => {
       const token = client.getToken();
       if (!token || !mounted) return;
 
-      logger.debug('HOOK', 'Chargement initial des données');
       try {
-        await loadAllData();
+        await loadInitialData();
       } catch (error) {
         if (!mounted) return;
 
@@ -554,18 +557,25 @@ export function useIbex(config: IbexConfig): IbexReturn {
           error instanceof Error &&
           (error.message.includes('Unauthorized') || error.message.includes('401'))
         ) {
-          logger.auth("Token invalide - Nettoyage de l'état");
-          setData(null);
+          logger.auth("Token invalide - Reset de l'état");
+          setData({
+            user: null,
+            wallet: null,
+            balance: { amount: 0, symbol: 'EURe', usdValue: 0 },
+            transactions: [],
+            operations: [],
+          });
         }
       }
     };
 
-    loadInitialData();
+    loadData();
 
     return () => {
       mounted = false;
+      isInitialized.current = false;
     };
-  }, []);
+  }, [client, loadInitialData]);
 
   // ========================================================================
   // RETOUR DU HOOK
@@ -573,28 +583,27 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
   return {
     // Données principales
-    balance: data?.balance?.amount || 0,
-    transactions: data?.transactions || [],
-    operations: data?.operations || [],
-    user: data?.user || null,
-    wallet: data?.wallet || null,
+    balance: data.balance.amount,
+    transactions: data.transactions,
+    operations: data.operations,
+    user: data.user,
+    wallet: data.wallet,
 
     // État
     isLoading,
     error,
+    isWebSocketConnected,
 
-    // Actions d'authentification
+    // Actions
     signIn,
     signUp,
     logout,
-
-    // Actions financières
     send,
     receive,
     withdraw,
-
-    // Actions KYC
     startKyc,
+    refresh,
+    clearError,
 
     // Actions IBEX Safe
     getUserPrivateData,
@@ -603,8 +612,6 @@ export function useIbex(config: IbexConfig): IbexReturn {
     confirmEmail,
 
     // Utilitaires
-    refresh,
-    clearError,
     getKycStatusLabel,
     getOperationTypeLabel,
     getOperationStatusLabel,
@@ -612,7 +619,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
 }
 
 // ============================================================================
-// FONCTIONS UTILITAIRES DE MAPPING
+// FONCTIONS UTILITAIRES
 // ============================================================================
 
 function getKycStatusLabel(level: number): string {
@@ -649,7 +656,7 @@ function getOperationTypeLabel(type: string): string {
     case 'KYC':
       return "Vérification d'identité";
     default:
-      return type; // Retourner le type original si non reconnu
+      return type;
   }
 }
 
@@ -665,71 +672,5 @@ function getOperationStatusLabel(status: string): string {
       return 'En attente';
     default:
       return status;
-  }
-}
-
-function mapTransactionStatus(status: string): 'confirmed' | 'pending' | 'failed' {
-  switch (status) {
-    case 'SUCCESS':
-    case 'confirmed':
-    case 'completed':
-      return 'confirmed';
-    case 'PENDING':
-    case 'pending':
-      return 'pending';
-    case 'FAILED':
-    case 'failed':
-    case 'error':
-      return 'failed';
-    default:
-      return 'pending';
-  }
-}
-
-function mapOperationType(
-  type: string
-):
-  | 'TRANSFER'
-  | 'WITHDRAW'
-  | 'KYC'
-  | 'IBAN_CREATE'
-  | 'SIGN_MESSAGE'
-  | 'ENABLE_RECOVERY'
-  | 'CANCEL_RECOVERY' {
-  switch (type) {
-    case 'TRANSFER_EURe':
-      return 'TRANSFER';
-    case 'MONERIUM_WITHDRAW_EURe':
-      return 'WITHDRAW';
-    case 'MONERIUM_CREATE_IBAN':
-      return 'IBAN_CREATE';
-    case 'SIGN_MESSAGE':
-      return 'SIGN_MESSAGE';
-    case 'ENABLE_RECOVERY':
-      return 'ENABLE_RECOVERY';
-    case 'CANCEL_RECOVERY':
-      return 'CANCEL_RECOVERY';
-    case 'KYC':
-      return 'KYC';
-    default:
-      // Retourner le type original si non reconnu pour éviter de masquer les vrais types
-      return type as any;
-  }
-}
-
-function mapOperationStatus(status: string): 'pending' | 'completed' | 'failed' | 'executed' {
-  switch (status) {
-    case 'EXECUTED':
-      return 'executed';
-    case 'completed':
-      return 'completed';
-    case 'FAILED':
-    case 'failed':
-      return 'failed';
-    case 'CREATED':
-    case 'PENDING':
-    case 'pending':
-    default:
-      return 'pending';
   }
 }

@@ -4,38 +4,46 @@
 // GitHub: https://github.com/AbsconseOfficiel
 // LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
+/**
+ * Point d'entrée principal du SDK IBEX
+ *
+ * TODO: Ajouter la documentation des exports
+ * TODO: Implémenter les tests d'intégration
+ * TODO: Ajouter la validation des types
+ */
+
 // ============================================================================
-// HOOKS PRINCIPAUX
+// HOOKS
 // ============================================================================
 
-// Hook principal - API unifiée et simplifiée
+// Hook principal pour l'intégration
 export { useIbex } from './hooks/useIbex';
 
 // ============================================================================
 // PROVIDERS
 // ============================================================================
 
-// Provider principal pour la configuration
+// Provider de configuration
 export { IbexProvider } from './context/IbexProvider';
 
 // ============================================================================
 // UTILITAIRES
 // ============================================================================
 
-// Utilitaires de formatage
+// Formatage des données
 export * from './utils/formatters';
 
-// Utilitaires de validation
+// Validation des entrées
 export * from './utils/validators';
 
-// Logger
+// Système de logs
 export { logger } from './utils/logger';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-// Types principaux
+// Types TypeScript
 export type {
   IbexConfig,
   User,
@@ -65,17 +73,19 @@ export type {
 } from './types';
 
 // ============================================================================
-// CORE (pour usage avancé)
+// CORE (usage avancé)
 // ============================================================================
 
-// Client principal (pour usage avancé)
+// Clients principaux
 export { IbexClient } from './core/IbexClient';
 export { ApiClient } from './core/ApiClient';
 export { CacheManager } from './core/CacheManager';
 
-// Services (pour usage avancé)
+// Services internes
 export { AuthService } from './services/AuthService';
 export { WalletService } from './services/WalletService';
 export { TransactionService } from './services/TransactionService';
 export { KycService } from './services/KycService';
 export { IbexSafeService } from './services/IbexSafeService';
+export { WebSocketService } from './services/WebSocketService';
+export { WebSocketManager } from './services/WebSocketManager';
