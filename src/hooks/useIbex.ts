@@ -215,6 +215,56 @@ export function useIbex(config: IbexConfig): IbexReturn {
   }, []);
 
   // ========================================================================
+  // RECHARGEMENT DES OPÉRATIONS
+  // ========================================================================
+
+  // Debounce pour éviter les appels multiples
+  const refreshOperationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isRefreshingOperationsRef = useRef<boolean>(false);
+
+  const refreshOperations = useCallback(async () => {
+    // Évite les appels simultanés
+    if (isRefreshingOperationsRef.current) {
+      return;
+    }
+
+    // Annule le refresh précédent s'il est en cours
+    if (refreshOperationsTimeoutRef.current) {
+      clearTimeout(refreshOperationsTimeoutRef.current);
+    }
+
+    // Programme un nouveau refresh avec un délai de 500ms
+    refreshOperationsTimeoutRef.current = setTimeout(async () => {
+      try {
+        isRefreshingOperationsRef.current = true;
+
+        const token = client.getToken();
+        if (!token) return;
+
+        const opData = await client.getUserOperations();
+        const operations = (opData?.data || [])
+          .filter((op: any) => {
+            // Filtre seulement les opérations exécutées
+            const safeStatus = op.safeOperation?.status;
+            return safeStatus === 'EXECUTED';
+          })
+          .map(transformOperation);
+
+        setData(prev => ({
+          ...prev,
+          operations,
+        }));
+
+        logger.info('OPERATIONS', 'Opérations rafraîchies', { count: operations.length });
+      } catch (error) {
+        logger.debug('OPERATIONS', 'Erreur lors du rafraîchissement des opérations', error);
+      } finally {
+        isRefreshingOperationsRef.current = false;
+      }
+    }, 500);
+  }, [client, transformOperation]);
+
+  // ========================================================================
   // CALLBACKS WEBSOCKET
   // ========================================================================
 
@@ -237,6 +287,10 @@ export function useIbex(config: IbexConfig): IbexReturn {
             usdValue: 0,
           },
         }));
+
+        // Rafraîchit les opérations quand le solde change
+        // car cela peut indiquer une nouvelle activité
+        refreshOperations();
       },
 
       // Ajoute une nouvelle transaction à la liste (évite les doublons)
@@ -257,6 +311,10 @@ export function useIbex(config: IbexConfig): IbexReturn {
             transactions: deduplicated.slice(0, 50), // Limite à 50 transactions
           };
         });
+
+        // Rafraîchit les opérations quand une nouvelle transaction arrive
+        // car les opérations peuvent être liées aux transactions
+        refreshOperations();
       },
 
       onUserData: (userData: any) => {
@@ -301,6 +359,33 @@ export function useIbex(config: IbexConfig): IbexReturn {
         }));
       },
 
+      // Met à jour les opérations en temps réel
+      onOperationUpdate: (operationData: any) => {
+        logger.info('OPERATION', 'Opération mise à jour', operationData);
+        const operation = transformOperation(operationData);
+
+        setData(prev => {
+          // Trouve l'opération existante et la met à jour
+          const existingIndex = prev.operations.findIndex(op => op.id === operation.id);
+
+          if (existingIndex >= 0) {
+            // Met à jour l'opération existante
+            const updatedOperations = [...prev.operations];
+            updatedOperations[existingIndex] = operation;
+            return {
+              ...prev,
+              operations: updatedOperations,
+            };
+          } else {
+            // Ajoute la nouvelle opération
+            return {
+              ...prev,
+              operations: [operation, ...prev.operations],
+            };
+          }
+        });
+      },
+
       onConnectionChange: (connected: boolean) => {
         setIsWebSocketConnected(connected);
       },
@@ -312,7 +397,13 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
     wsCallbacksRef.current = callbacks;
     return callbacks;
-  }, [transformTransaction, transformUser, transformWallet, deduplicateTransactions]);
+  }, [
+    transformTransaction,
+    transformUser,
+    transformWallet,
+    deduplicateTransactions,
+    refreshOperations,
+  ]);
 
   // ========================================================================
   // INITIALISATION WEBSOCKET
@@ -608,6 +699,11 @@ export function useIbex(config: IbexConfig): IbexReturn {
     return () => {
       mounted = false;
       isInitialized.current = false;
+
+      // Nettoie le timeout de refresh des opérations
+      if (refreshOperationsTimeoutRef.current) {
+        clearTimeout(refreshOperationsTimeoutRef.current);
+      }
     };
   }, [client, loadInitialData]);
 

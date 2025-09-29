@@ -86,6 +86,7 @@ export interface WebSocketCallbacks {
   onUserData?: (data: UserData) => void;
   onIbanUpdate?: (data: IbanUpdate) => void;
   onKycUpdate?: (data: KycUpdate) => void;
+  onOperationUpdate?: (data: any) => void;
   onConnectionChange?: (isConnected: boolean) => void;
   onError?: (error: string) => void;
 }
@@ -221,6 +222,16 @@ export class WebSocketService {
         this.callbacks.onUserData?.(message.data);
         break;
 
+      case 'operation_data':
+        // Données d'opérations initiales
+        if (message.data?.operations?.data) {
+          const operations = message.data.operations.data;
+          operations.forEach((op: any) => {
+            this.callbacks.onOperationUpdate?.(op);
+          });
+        }
+        break;
+
       case 'user.iban.updated':
         // Mise à jour du statut IBAN
         logger.info('WebSocket', 'IBAN mis à jour', message.data);
@@ -231,6 +242,18 @@ export class WebSocketService {
         // Mise à jour du statut KYC
         logger.info('WebSocket', 'KYC mis à jour', message.data);
         this.callbacks.onKycUpdate?.(message.data);
+        break;
+
+      case 'operation_update':
+        // Mise à jour d'opération en temps réel
+        logger.info('WebSocket', 'Opération mise à jour', message.data);
+        this.callbacks.onOperationUpdate?.(message.data);
+        break;
+
+      case 'new_operation':
+        // Nouvelle opération en temps réel
+        logger.info('WebSocket', 'Nouvelle opération', message.data);
+        this.callbacks.onOperationUpdate?.(message.data);
         break;
 
       case 'auth_error':
