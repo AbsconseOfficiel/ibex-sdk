@@ -8,7 +8,7 @@
 [![FIDO2](https://img.shields.io/badge/FIDO2-Certified-blue)](https://fidoalliance.org/)
 [![Passkeys](https://img.shields.io/badge/Passkeys-Supported-orange)](https://www.passkeys.io/)
 
-[Pourquoi WebAuthn ?](#-pourquoi-webauthn) • [Configuration](#-configuration) • [Utilisation](#-utilisation) • [Sécurité](#-sécurité)
+[Pourquoi WebAuthn ?](#pourquoi-webauthn-) • [Configuration](#configuration) • [Utilisation](#utilisation) • [Sécurité et bonnes pratiques](#sécurité-et-bonnes-pratiques)
 
 </div>
 
@@ -109,7 +109,7 @@ graph LR
 import { IbexProvider } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com', // ⚠️ Doit correspondre exactement
 };
 
@@ -127,7 +127,7 @@ function App() {
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
   rpId: 'votre-domaine.com', // Identifiant Relying Party
   timeout: 30000, // Timeout en ms (défaut: 30s)
@@ -306,7 +306,7 @@ const handleLogout = async () => {
 ```typescript
 // ✅ BON
 const config = {
-  baseURL: 'https://api.ibex.com', // HTTPS
+  baseURL: 'https://api.ibexwallet.org', // HTTPS
   domain: 'votre-domaine.com', // Domaine exact
   rpId: 'votre-domaine.com', // Correspond au domaine
   timeout: 30000, // Timeout raisonnable
@@ -314,7 +314,7 @@ const config = {
 
 // ❌ MAUVAIS
 const badConfig = {
-  baseURL: 'http://api.ibex.com', // ❌ HTTP non sécurisé
+  baseURL: 'http://api.ibexwallet.org', // ❌ HTTP non sécurisé
   domain: '*.votre-domaine.com', // ❌ Wildcard non supporté
   rpId: 'different-domain.com', // ❌ Ne correspond pas
 };
@@ -499,7 +499,7 @@ function MultiDeviceInfo() {
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
   debug: true, // Logs détaillés dans la console
 };

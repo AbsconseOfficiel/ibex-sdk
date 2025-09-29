@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Prérequis](#-prérequis) • [Installation](#-installation) • [Configuration](#-configuration) • [Premier test](#-premier-test)
+[Prérequis](#prérequis) • [Installation](#installation) • [Configuration de base](#configuration-de-base) • [Premier test](#premier-test)
 
 </div>
 
@@ -128,7 +128,7 @@ L'IBEX SDK nécessite deux paramètres essentiels :
 
 ```typescript
 export const IBEX_CONFIG = {
-  baseURL: 'https://api.ibex.com', // URL de l'API IBEX
+  baseURL: 'https://api.ibexwallet.org', // URL de l'API IBEX
   domain: 'votre-domaine.com', // Votre domaine
 };
 ```
@@ -145,8 +145,8 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const IBEX_CONFIG = {
   baseURL: isDevelopment
-    ? 'https://api-testnet.ibex.com' // Environnement de test
-    : 'https://api.ibex.com', // Production
+    ? 'https://api-testnet.ibexwallet.org' // Environnement de test
+    : 'https://api.ibexwallet.org', // Production
   domain: window.location.hostname, // Domaine automatique
 };
 ```

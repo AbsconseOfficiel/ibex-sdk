@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 
-[Installation](#-installation) • [Hook Principal](#-hook-principal-useibex) • [Types](#-types) • [Exemples](#-exemples-pratiques)
+[Installation](#installation) • [Hook principal `useIbex()`](#hook-principal-useibex) • [Types](#types) • [Exemples pratiques](#exemples-pratiques)
 
 </div>
 
@@ -44,7 +44,7 @@ npm install @absconse/ibex-sdk
 import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-app.com',
 };
 
@@ -77,7 +77,7 @@ const config = {
 
 ```typescript
 const config: IbexConfig = {
-  baseURL: 'https://api-testnet.ibex.com',
+  baseURL: 'https://api-testnet.ibexwallet.org',
   domain: 'your-app.com',
   rpId: 'your-app.com',
   timeout: 30000,
@@ -655,11 +655,11 @@ const secureSend = async (amount: number, to: string) => {
 // config/environments.ts
 const envConfig = {
   development: {
-    baseURL: 'https://api-testnet.ibex.com',
+    baseURL: 'https://api-testnet.ibexwallet.org',
     domain: 'localhost:3000',
   },
   production: {
-    baseURL: 'https://api.ibex.com',
+    baseURL: 'https://api.ibexwallet.org',
     domain: 'yourapp.com',
   },
 };

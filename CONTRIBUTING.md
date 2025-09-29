@@ -185,7 +185,7 @@ interface UserData {}
 type AuthState = 'loading' | 'authenticated';
 
 // Constantes : UPPER_SNAKE_CASE
-const API_BASE_URL = 'https://api.ibex.com';
+const API_BASE_URL = 'https://api.ibexwallet.org';
 
 // Fichiers : kebab-case
 // user-data.ts

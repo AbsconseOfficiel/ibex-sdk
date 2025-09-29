@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Vue d'ensemble](#-vue-densemble) • [Interface complète](#-interface-complète) • [Exemples](#-exemples-dutilisation) • [Bonnes pratiques](#-bonnes-pratiques)
+[Vue d'ensemble](#vue-densemble) • [Interface complète](#interface-complète) • [Exemples d'utilisation](#exemples-dutilisation) • [Bonnes pratiques](#bonnes-pratiques)
 
 </div>
 

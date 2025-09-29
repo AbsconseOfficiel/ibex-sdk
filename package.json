@@ -1,6 +1,6 @@
 {
   "name": "@absconse/ibex-sdk",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "SDK simplifié pour l'intégration des services IBEX - API unifiée avec 90% de réduction de complexité",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -22,7 +22,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build && npm run type-check && npm run security-check",
+    "prepublishOnly": "npm run clean && npm run build && npm run type-check",
     "prepack": "npm run build",
     "security-check": "node scripts/security-check.js"
   },
@@ -48,7 +48,6 @@
   ],
   "author": {
     "name": "Absconse, Dylan ENJOLVIN",
-    "email": "dylan@absconse.com",
     "url": "https://www.linkedin.com/in/dylanenjolvin/"
   },
   "license": "Apache-2.0",

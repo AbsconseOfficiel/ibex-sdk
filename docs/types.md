@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Types d'authentification](#-types-dauthentification) • [Types de données](#-types-de-données) • [Types d'actions](#-types-dactions) • [Types d'erreurs](#-types-derreurs)
+[Types d'authentification](#types-dauthentification) • [Types de données](#types-de-données) • [Types d'actions](#types-dactions) • [Types d'erreurs](#types-derreurs)
 
 </div>
 

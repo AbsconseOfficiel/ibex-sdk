@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Exemples de base](#-exemples-de-base) • [Composants](#-composants-dinterface) • [Tests](#-tests-et-exemples) • [Applications](#-applications-complètes)
+[Exemples de base](#exemples-de-base) • [Composants d'interface](#composants-dinterface) • [Applications complètes](#applications-complètes)
 
 </div>
 
@@ -26,7 +26,7 @@ import React, { useState } from 'react';
 import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 };
 
@@ -939,7 +939,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
 
 const config = {
-  baseURL: process.env.REACT_APP_IBEX_API_URL || 'https://api.ibex.com',
+  baseURL: process.env.REACT_APP_IBEX_API_URL || 'https://api.ibexwallet.org',
   domain: process.env.REACT_APP_IBEX_DOMAIN || 'votre-domaine.com',
   debug: process.env.NODE_ENV === 'development',
 };

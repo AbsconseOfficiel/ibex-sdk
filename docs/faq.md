@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Authentification](#-authentification) • [Données](#-données) • [Transactions](#-transactions) • [Support](#-support)
+[Authentification](#authentification) • [Données](#données) • [Transactions](#transactions) • [Support](#support)
 
 </div>
 
@@ -38,7 +38,7 @@
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'your-domain.com',
   rpId: 'your-domain.com', // Doit correspondre au domaine
 };
@@ -55,7 +55,7 @@ const config = {
 ```typescript
 // Configuration automatique dans le SDK
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'your-domain.com',
   // Le SDK gère automatiquement les préférences WebAuthn
 };
@@ -541,7 +541,7 @@ useEffect(() => {
 
 ```typescript
 const config = {
-  baseURL: 'https://api-testnet.ibex.com',
+  baseURL: 'https://api-testnet.ibexwallet.org',
   domain: 'test.com',
   rpId: 'test.com',
   // Le SDK gère automatiquement les logs de debug

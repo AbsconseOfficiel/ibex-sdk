@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Démarrage rapide](#-démarrage-rapide) • [Configuration](#-configuration) • [Exemples](#-exemples) • [Support](#-support)
+[Démarrage rapide](#démarrage-rapide) • [Guides disponibles](#guides-disponibles) • [Support](#support-et-communauté)
 
 </div>
 
@@ -61,7 +61,7 @@ npm install @absconse/ibex-sdk
 import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 };
 
@@ -398,7 +398,7 @@ function Dashboard() {
 
 ```typescript
 const config = {
-  baseURL: 'https://api-testnet.ibex.com',
+  baseURL: 'https://api-testnet.ibexwallet.org',
   domain: 'localhost',
   debug: true,
 };
@@ -408,7 +408,7 @@ const config = {
 
 ```typescript
 const config = {
-  baseURL: 'https://api-staging.ibex.com',
+  baseURL: 'https://api-staging.ibexwallet.org',
   domain: 'staging.yourapp.com',
   debug: false,
 };
@@ -418,7 +418,7 @@ const config = {
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'yourapp.com',
   debug: false,
 };

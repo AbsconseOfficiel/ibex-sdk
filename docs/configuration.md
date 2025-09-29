@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 [![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
 
-[Configuration de base](#-configuration-de-base) • [Environnements](#-environnements) • [Variables](#-variables-denvironnement) • [Validation](#-validation-et-erreurs)
+[Configuration de base](#configuration-de-base) • [Environnements](#environnements) • [Variables d'environnement](#variables-denvironnement) • [Validation et erreurs](#validation-et-erreurs)
 
 </div>
 
@@ -37,7 +37,7 @@ L'IBEX SDK suit le principe du **"Zero Configuration"** :
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 };
 ```
@@ -54,10 +54,10 @@ const config = {
 
 ### Paramètres requis
 
-| Paramètre | Type     | Description           | Exemple                |
-| --------- | -------- | --------------------- | ---------------------- |
-| `baseURL` | `string` | URL de l'API IBEX     | `https://api.ibex.com` |
-| `domain`  | `string` | Domaine pour WebAuthn | `votre-domaine.com`    |
+| Paramètre | Type     | Description           | Exemple                      |
+| --------- | -------- | --------------------- | ---------------------------- |
+| `baseURL` | `string` | URL de l'API IBEX     | `https://api.ibexwallet.org` |
+| `domain`  | `string` | Domaine pour WebAuthn | `votre-domaine.com`          |
 
 ### Configuration minimale complète
 
@@ -65,7 +65,7 @@ const config = {
 import { IbexProvider } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 };
 
@@ -101,7 +101,7 @@ function App() {
 
 ```typescript
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 
   // Paramètres optionnels
@@ -133,7 +133,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 export const IBEX_CONFIG = {
   baseURL: isDevelopment
     ? 'http://localhost:3001/api' // API locale
-    : 'https://api.ibex.com', // Production
+    : 'https://api.ibexwallet.org', // Production
   domain: isDevelopment
     ? 'localhost' // Domaine local
     : 'votre-domaine.com', // Domaine de production
@@ -145,7 +145,7 @@ export const IBEX_CONFIG = {
 
 ```typescript
 export const IBEX_CONFIG = {
-  baseURL: 'https://api-testnet.ibex.com',
+  baseURL: 'https://api-testnet.ibexwallet.org',
   domain: 'test.votre-domaine.com',
   debug: true,
   timeout: 60000, // Timeout plus long pour les tests
@@ -156,7 +156,7 @@ export const IBEX_CONFIG = {
 
 ```typescript
 export const IBEX_CONFIG = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
   debug: false,
   timeout: 30000,
@@ -168,7 +168,7 @@ export const IBEX_CONFIG = {
 
 ```typescript
 export const IBEX_CONFIG = {
-  baseURL: 'https://api-staging.ibex.com',
+  baseURL: 'https://api-staging.ibexwallet.org',
   domain: 'staging.votre-domaine.com',
   debug: false,
   timeout: 45000,
@@ -235,7 +235,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 ```typescript
 // src/config/ibex.ts
 export const IBEX_CONFIG = {
-  baseURL: process.env.REACT_APP_IBEX_API_URL || 'https://api.ibex.com',
+  baseURL: process.env.REACT_APP_IBEX_API_URL || 'https://api.ibexwallet.org',
   domain: process.env.REACT_APP_IBEX_DOMAIN || 'votre-domaine.com',
   debug: process.env.NODE_ENV === 'development',
   timeout: parseInt(process.env.REACT_APP_IBEX_TIMEOUT || '30000'),
@@ -250,7 +250,7 @@ export const IBEX_CONFIG = {
 
 ```bash
 # .env
-REACT_APP_IBEX_API_URL=https://api-testnet.ibex.com
+REACT_APP_IBEX_API_URL=https://api-testnet.ibexwallet.org
 REACT_APP_IBEX_DOMAIN=localhost
 REACT_APP_IBEX_DEBUG=true
 ```
@@ -278,14 +278,14 @@ function getConfig() {
 
   if (hostname.includes('staging')) {
     return {
-      baseURL: 'https://api-staging.ibex.com',
+      baseURL: 'https://api-staging.ibexwallet.org',
       domain: hostname,
       debug: false,
     };
   }
 
   return {
-    baseURL: 'https://api.ibex.com',
+    baseURL: 'https://api.ibexwallet.org',
     domain: hostname,
     debug: false,
   };
@@ -408,7 +408,7 @@ function App() {
         console.error('Erreur de chargement de la configuration:', error);
         // Configuration de fallback
         setConfig({
-          baseURL: 'https://api.ibex.com',
+          baseURL: 'https://api.ibexwallet.org',
           domain: window.location.hostname,
         });
       }
@@ -543,12 +543,12 @@ function ConfigError({ errors, warnings }: ConfigErrorProps) {
 ```typescript
 const config = {
   development: {
-    baseURL: 'https://api-testnet.ibex.com',
+    baseURL: 'https://api-testnet.ibexwallet.org',
     domain: 'localhost',
     debug: true,
   },
   production: {
-    baseURL: 'https://api.ibex.com',
+    baseURL: 'https://api.ibexwallet.org',
     domain: 'votre-domaine.com',
     debug: false,
   },
@@ -562,7 +562,7 @@ const config = {
 
 ```typescript
 const badConfig = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'localhost', // Mélange production/développement
   debug: true,
 };

@@ -8,9 +8,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 
+[![npm version](https://img.shields.io/npm/v/@absconse/ibex-sdk?color=blue&label=npm)](https://www.npmjs.com/package/@absconse/ibex-sdk)
+
 [![GitHub Stars](https://img.shields.io/github/stars/AbsconseOfficiel/ibex-sdk?style=social)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
-[Documentation](#-documentation-complète) • [Démarrage rapide](#-démarrage-rapide) • [Exemples](#-exemples-dutilisation) • [Support](#-support)
+[Documentation](#documentation-complète) • [Démarrage rapide](#démarrage-rapide) • [Exemples](#exemples-dutilisation) • [Support](#support)
 
 </div>
 
@@ -118,7 +120,7 @@ pnpm add @absconse/ibex-sdk
 import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
 
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
 };
 
@@ -173,7 +175,7 @@ function Dashboard() {
 
 ```tsx
 const config = {
-  baseURL: 'https://api.ibex.com', // URL de l'API IBEX
+  baseURL: 'https://api.ibexwallet.org', // URL de l'API IBEX
   domain: 'votre-domaine.com', // Votre domaine
 };
 ```
@@ -182,7 +184,7 @@ const config = {
 
 ```tsx
 const config = {
-  baseURL: 'https://api.ibex.com',
+  baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
   timeout: 30000, // Timeout des requêtes (ms)
   retries: 3, // Nombre de tentatives
@@ -363,7 +365,6 @@ Apache License 2.0 - voir [LICENSE](./LICENSE) pour plus de détails.
 | **Documentation** | [docs/](./docs/)                                                               |
 | **Issues GitHub** | [Signaler un bug](https://github.com/AbsconseOfficiel/ibex-sdk/issues)         |
 | **Discussions**   | [Poser une question](https://github.com/AbsconseOfficiel/ibex-sdk/discussions) |
-| **Email**         | dev@ibex.com                                                                   |
 
 ---
 
