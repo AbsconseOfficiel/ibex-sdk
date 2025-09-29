@@ -130,7 +130,7 @@ function LoginPage() {
   return (
     <div className="user-container">
       <div className="user-header">
-        <h1>Bonjour {user.email} !</h1>
+        <h1>Bonjour {user.email || 'Utilisateur'} !</h1>
         <div className="user-status">
           <span className={`status-badge ${user.kyc.status}`}>KYC: {user.kyc.status}</span>
         </div>
@@ -143,11 +143,16 @@ function LoginPage() {
             <strong>ID utilisateur :</strong> {user.id}
           </p>
           <p>
-            <strong>Email :</strong> {user.email}
+            <strong>Email :</strong> {user.email || 'Non renseigné'}
           </p>
           <p>
             <strong>Statut KYC :</strong> {user.kyc.status}
           </p>
+          {user.iban && (
+            <p>
+              <strong>IBAN :</strong> {user.iban.status}
+            </p>
+          )}
           {user.wallet && (
             <p>
               <strong>Portefeuille :</strong> {user.wallet.address}
@@ -280,7 +285,7 @@ function FinancialDashboard() {
       <header className="dashboard-header">
         <div className="header-left">
           <h1>Dashboard IBEX</h1>
-          <p className="user-greeting">Bonjour {user.email}</p>
+          <p className="user-greeting">Bonjour {user.email || 'Utilisateur'}</p>
           <div className="status-info">
             <span className={`kyc-status ${user.kyc.status}`}>
               KYC: {getKycStatusLabel(user.kyc.level)}

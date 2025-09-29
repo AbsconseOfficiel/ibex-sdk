@@ -267,6 +267,40 @@ export function useIbex(config: IbexConfig): IbexReturn {
         }));
       },
 
+      onIbanUpdate: (ibanData: any) => {
+        logger.info('IBAN', 'Statut IBAN mis à jour', ibanData);
+        setData(prev => ({
+          ...prev,
+          user: prev.user
+            ? {
+                ...prev.user,
+                iban: {
+                  ...prev.user.iban,
+                  status: ibanData.newState,
+                  updatedAt: ibanData.updatedAt,
+                },
+              }
+            : prev.user,
+        }));
+      },
+
+      onKycUpdate: (kycData: any) => {
+        logger.info('KYC', 'Statut KYC mis à jour', kycData);
+        setData(prev => ({
+          ...prev,
+          user: prev.user
+            ? {
+                ...prev.user,
+                kyc: {
+                  ...prev.user.kyc,
+                  status: kycData.newKyc.toLowerCase() as 'pending' | 'verified' | 'rejected',
+                  updatedAt: kycData.updatedAt,
+                },
+              }
+            : prev.user,
+        }));
+      },
+
       onConnectionChange: (connected: boolean) => {
         setIsWebSocketConnected(connected);
       },

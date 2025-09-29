@@ -171,10 +171,17 @@ function Dashboard() {
 ```typescript
 interface User {
   id: string; // Identifiant unique
-  email: string; // Email
+  email: string | null; // Email (null si KYC non fait)
   kyc: {
     status: 'pending' | 'verified' | 'rejected'; // Statut KYC
     level: number; // Niveau KYC (0-5)
+    updatedAt?: string; // Timestamp de mise à jour
+  };
+  iban?: {
+    status: 'pending' | 'verified' | 'rejected'; // Statut IBAN
+    iban?: string; // Numéro IBAN
+    bic?: string; // Code BIC
+    updatedAt?: string; // Timestamp de mise à jour
   };
 }
 ```

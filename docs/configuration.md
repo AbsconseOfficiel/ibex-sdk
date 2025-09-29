@@ -114,6 +114,13 @@ const config = {
 };
 ```
 
+**Fonctionnalités WebSocket automatiques :**
+
+- ✅ Connexion WebSocket automatique
+- ✅ Mises à jour en temps réel (solde, transactions)
+- ✅ Gestion des erreurs de connexion
+- ✅ Reconnexion automatique
+
 **Points clés :**
 
 - ✅ `rpId` est automatiquement déduit du `domain`

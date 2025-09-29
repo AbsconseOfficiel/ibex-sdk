@@ -66,10 +66,17 @@ function MyComponent() {
 ```typescript
 interface User {
   id: string;
-  email: string;
+  email: string | null; // null si KYC non fait
   kyc: {
     status: 'pending' | 'verified' | 'rejected';
     level: number;
+    updatedAt?: string;
+  };
+  iban?: {
+    status: 'pending' | 'verified' | 'rejected';
+    iban?: string;
+    bic?: string;
+    updatedAt?: string;
   };
 }
 ```
@@ -77,11 +84,10 @@ interface User {
 **Propriétés :**
 
 - `id` : Identifiant unique de l'utilisateur
-- `email` : Adresse email de l'utilisateur
-- `kyc` : Statut de vérification d'identité
+- `email` : Adresse email de l'utilisateur (null si KYC non fait)
+- `kyc` : Statut de vérification d'identité avec timestamp
+- `iban` : Informations IBAN (optionnel) avec statut et timestamp
 - `wallet` : Informations du portefeuille (optionnel)
-- `createdAt` : Date de création du compte
-- `updatedAt` : Date de dernière mise à jour
 
 ### Interface Wallet
 
@@ -515,36 +521,43 @@ interface MigrationResult {
 
 ---
 
-## Types de monitoring
+## Types WebSocket
 
-### Interface Metrics
+### Interface IbanUpdate
 
 ```typescript
-interface Metrics {
-  timestamp: string;
-  userId?: string;
-  sessionId: string;
-  event: string;
-  properties: Record<string, any>;
-  duration?: number;
-  success: boolean;
+interface IbanUpdate {
+  previousIban: string;
+  newIban: string;
+  updatedAt: string;
 }
 ```
 
-### Types d'événements
+### Interface KycUpdate
 
 ```typescript
-type EventType =
-  | 'user_authenticated'
-  | 'user_logout'
-  | 'transaction_sent'
-  | 'transaction_received'
-  | 'kyc_started'
-  | 'kyc_completed'
-  | 'error_occurred';
+interface KycUpdate {
+  previousKyc: string;
+  newKyc: string;
+  updatedAt: string;
+}
+```
 
-interface EventProperties {
-  [key: string]: string | number | boolean;
+### Types d'événements WebSocket
+
+```typescript
+type WebSocketEventType =
+  | 'user.iban.updated'
+  | 'user.kyc.updated'
+  | 'auth_error'
+  | 'balance_update'
+  | 'new_transaction'
+  | 'user_data';
+
+interface WebSocketEvent {
+  type: WebSocketEventType;
+  data: any;
+  timestamp: string;
 }
 ```
 

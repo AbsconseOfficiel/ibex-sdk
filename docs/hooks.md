@@ -144,6 +144,8 @@ interface IbexData {
   refresh: () => Promise<void>; // Actualiser les données
   clearError: () => void; // Effacer les erreurs
   getKycStatusLabel: (level: number) => string; // Libellé statut KYC
+  getOperationTypeLabel: (type: string) => string; // Libellé type d'opération
+  getOperationStatusLabel: (status: string) => string; // Libellé statut d'opération
 }
 ```
 
@@ -229,6 +231,8 @@ function Dashboard() {
     withdraw,
     refresh,
     clearError,
+    getOperationTypeLabel,
+    getOperationStatusLabel,
   } = useIbex(config);
 
   // Formatage des montants
@@ -328,8 +332,8 @@ function Dashboard() {
           {operations.slice(0, 3).map(op => (
             <div key={op.id} className="operation-item">
               <div className="operation-header">
-                <span className="operation-type">{op.type}</span>
-                <span className="operation-status">{op.status}</span>
+                <span className="operation-type">{getOperationTypeLabel(op.type)}</span>
+                <span className="operation-status">{getOperationStatusLabel(op.status)}</span>
               </div>
               <div className="operation-date">
                 {new Date(op.createdAt).toLocaleDateString('fr-FR')}

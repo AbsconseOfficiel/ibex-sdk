@@ -83,6 +83,7 @@ Types stricts pour une meilleure expérience de développement et moins d'erreur
 - **Transactions EURe** : Envoi et réception de stablecoins européens
 - **Retraits IBAN** : Conversion crypto vers compte bancaire traditionnel
 - **Historique complet** : Toutes vos transactions et opérations
+- **Mises à jour temps réel** : WebSocket pour données en direct
 
 ### Interface développeur
 
@@ -94,6 +95,7 @@ Types stricts pour une meilleure expérience de développement et moins d'erreur
 - **Données prêtes** : Plus besoin de formatage manuel
 - **Gestion d'erreurs** : Système d'erreurs unifié et clair
 - **Types stricts** : IntelliSense complet et validation
+- **Temps réel** : WebSocket pour mises à jour automatiques
 
 ---
 
@@ -153,7 +155,7 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Bonjour {user.email}</h1>
+      <h1>Bonjour {user.email || 'Utilisateur'}</h1>
       <p>
         Solde:{' '}
         {balance.toLocaleString('fr-FR', {
@@ -161,6 +163,7 @@ function Dashboard() {
           currency: 'EUR',
         })}
       </p>
+      {user.iban && <p>IBAN: {user.iban.status}</p>}
       <button onClick={() => send(100, '0x...')}>Envoyer 100€</button>
     </div>
   );

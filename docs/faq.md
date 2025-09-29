@@ -169,24 +169,31 @@ if (error) {
 
 ### Q: Comment afficher les données en temps réel ?
 
-**R:** Utilisez la fonction `refresh` :
+**R:** Le SDK utilise WebSocket pour les mises à jour automatiques :
 
 ```typescript
 function RealTimeData() {
-  const { refresh } = useIbex(config);
+  const { user, balance, transactions, isWebSocketConnected } = useIbex(config);
 
-  // Rafraîchir toutes les 30 secondes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refresh();
-    }, 30000);
+  // Les données se mettent à jour automatiquement via WebSocket
+  // Pas besoin de refresh manuel pour les transactions et le solde
 
-    return () => clearInterval(interval);
-  }, [refresh]);
-
-  return <div>Données en temps réel</div>;
+  return (
+    <div>
+      <p>Connexion WebSocket: {isWebSocketConnected ? '✅' : '❌'}</p>
+      <p>Solde: {balance} EURe</p>
+      <p>Transactions: {transactions.length}</p>
+    </div>
+  );
 }
 ```
+
+**Mises à jour automatiques :**
+
+- ✅ Solde en temps réel
+- ✅ Nouvelles transactions
+- ✅ Statut KYC/IBAN
+- ✅ Données utilisateur
 
 ---
 

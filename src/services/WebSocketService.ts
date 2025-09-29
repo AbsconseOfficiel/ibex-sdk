@@ -64,11 +64,28 @@ export interface UserData {
   }>;
 }
 
+export interface IbanUpdate {
+  safeAddress: string;
+  iban: string;
+  previousState: string;
+  newState: string;
+  updatedAt: string;
+}
+
+export interface KycUpdate {
+  safeAddress: string;
+  previousKyc: string;
+  newKyc: string;
+  updatedAt: string;
+}
+
 export interface WebSocketCallbacks {
   onAuthSuccess?: (data: { safeAddress: string; message: string }) => void;
   onBalanceUpdate?: (data: BalanceUpdate) => void;
   onNewTransaction?: (data: NewTransactionUpdate) => void;
   onUserData?: (data: UserData) => void;
+  onIbanUpdate?: (data: IbanUpdate) => void;
+  onKycUpdate?: (data: KycUpdate) => void;
   onConnectionChange?: (isConnected: boolean) => void;
   onError?: (error: string) => void;
 }
@@ -204,6 +221,24 @@ export class WebSocketService {
         this.callbacks.onUserData?.(message.data);
         break;
 
+      case 'user.iban.updated':
+        // Mise à jour du statut IBAN
+        logger.info('WebSocket', 'IBAN mis à jour', message.data);
+        this.callbacks.onIbanUpdate?.(message.data);
+        break;
+
+      case 'user.kyc.updated':
+        // Mise à jour du statut KYC
+        logger.info('WebSocket', 'KYC mis à jour', message.data);
+        this.callbacks.onKycUpdate?.(message.data);
+        break;
+
+      case 'auth_error':
+        // Erreur d'authentification
+        logger.error('WebSocket', "Erreur d'authentification", message.data);
+        this.callbacks.onError?.(message.data.message || "Erreur d'authentification");
+        break;
+
       case 'chainid_data':
         // Données de chaîne (pas de callback nécessaire)
         logger.debug('WebSocket', 'Données de chaîne reçues', message.data);
@@ -212,11 +247,6 @@ export class WebSocketService {
       case 'recovery_data':
         // Données de récupération (pas de callback nécessaire)
         logger.debug('WebSocket', 'Données de récupération reçues', message.data);
-        break;
-
-      case 'auth_error':
-        logger.error('WebSocket', "Erreur d'authentification", message.data);
-        this.callbacks.onError?.(message.data.message || "Erreur d'authentification");
         break;
 
       default:
@@ -264,12 +294,10 @@ export class WebSocketService {
       clearTimeout(this.reconnectInterval);
       this.reconnectInterval = null;
     }
-
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
-
     this.isConnected = false;
     this.callbacks.onConnectionChange?.(false);
   }

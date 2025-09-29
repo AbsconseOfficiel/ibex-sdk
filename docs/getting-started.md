@@ -269,8 +269,10 @@ function Dashboard() {
   // Interface utilisateur connecté
   return (
     <div>
-      <h1>Bonjour {user.email} !</h1>
+      <h1>Bonjour {user.email || 'Utilisateur'} !</h1>
       <p>Vous êtes connecté avec succès</p>
+
+      {user.iban && <p>Statut IBAN: {user.iban.status}</p>}
 
       <button onClick={logout}>Se déconnecter</button>
     </div>
@@ -367,7 +369,7 @@ function Dashboard() {
     <div>
       <header>
         <h1>Dashboard IBEX</h1>
-        <p>Bonjour {user.email}</p>
+        <p>Bonjour {user.email || 'Utilisateur'}</p>
         <button onClick={logout}>Déconnexion</button>
       </header>
 

@@ -30,6 +30,7 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 - **Gestion des transactions** : Envoi, réception, retraits
 - **Portefeuilles intégrés** : Gestion automatique des clés
 - **Interface unifiée** : Un seul hook pour tout
+- **Temps réel** : WebSocket pour mises à jour automatiques
 
 </td>
 <td width="50%">
@@ -40,6 +41,7 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 - **Sécurité** : Authentification par passkeys
 - **Performance** : Optimisations automatiques
 - **TypeScript** : Types stricts et autocomplétion
+- **Temps réel** : Mises à jour automatiques via WebSocket
 
 </td>
 </tr>
@@ -82,8 +84,9 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Bonjour {user.email} !</h1>
+      <h1>Bonjour {user.email || 'Utilisateur'} !</h1>
       <p>Solde: {balance} EURe</p>
+      {user.iban && <p>IBAN: {user.iban.status}</p>}
       <button onClick={() => send(100, '0x...')}>Envoyer 100€</button>
     </div>
   );

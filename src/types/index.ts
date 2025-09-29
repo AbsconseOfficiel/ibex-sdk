@@ -22,6 +22,13 @@ export interface User {
   kyc: {
     status: 'pending' | 'verified' | 'rejected';
     level: number;
+    updatedAt?: string;
+  };
+  iban?: {
+    status: 'pending' | 'verified' | 'rejected';
+    iban?: string;
+    bic?: string;
+    updatedAt?: string;
   };
 }
 
