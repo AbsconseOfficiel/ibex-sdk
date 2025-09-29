@@ -1,0 +1,56 @@
+# Source files (exclure du package npm)
+src/
+example/
+
+# Development files
+tsconfig.json
+tsup.config.ts
+.eslintrc.js
+.prettierrc
+.gitignore
+jest.config.js
+tailwind.config.js
+
+# Documentation source (garder seulement README.md)
+docs/
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+__tests__/
+test/
+coverage/
+
+# Development dependencies
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build artifacts
+*.tsbuildinfo
+.cache/
+
+# Temporary files
+*.tmp
+*.temp

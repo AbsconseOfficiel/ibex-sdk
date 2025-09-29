@@ -1,0 +1,228 @@
+# Changelog
+
+Toutes les modifications notables de ce projet seront documentées dans ce fichier.
+
+Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
+et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2025-09-29
+
+### Added
+
+- **Première version stable du SDK IBEX - Architecture simplifiée**
+- **Hook principal `useIbex` - API unifiée**
+- **Authentification WebAuthn/Passkeys**
+  - Support des authentificateurs intégrés (Touch ID, Face ID, Windows Hello)
+  - Support des clés de sécurité physiques (YubiKey, etc.)
+  - Gestion automatique des sessions persistantes
+  - Validation des domaines autorisés
+- **Support des wallets Safe (Gnosis Safe)**
+  - Création automatique de wallets Safe
+  - Support des chaînes multiples (Arbitrum Sepolia par défaut)
+  - Intégration native avec les opérations Safe
+- **Gestion complète des transactions blockchain**
+  - Envoi de stablecoins EURe
+  - Réception de fonds
+  - Historique des transactions en temps réel
+  - Formatage automatique des montants
+  - Validation des adresses Ethereum
+  - Support des devises multiples
+- **Processus KYC intégré et automatisé**
+  - Interface KYC en iframe
+  - Redirection complète avec URL de retour
+  - Gestion des statuts KYC (5 niveaux)
+  - Support multi-langues (français, anglais)
+  - Validation des documents d'identité
+- **Lecture des données blockchain via l'API bcreader**
+  - Récupération des balances en temps réel
+  - Historique des transactions avec pagination
+  - Filtrage par date et type de transaction
+  - Cache intelligent des données
+  - Optimisation des performances
+- **Support des retraits IBAN**
+  - Conversion crypto vers compte bancaire traditionnel
+  - Validation des IBAN européens
+  - Gestion des informations destinataire
+  - Intégration Monerium
+- **Service IBEX Safe pour données privées**
+  - Stockage sécurisé de données utilisateur
+  - Validation d'email avec codes de confirmation
+  - Gestion des préférences marketing
+  - API REST complète pour les données privées
+- **Gestion avancée des erreurs et états**
+  - Système d'erreurs unifié et structuré
+  - États de chargement granulaires
+  - Gestion des timeouts et retry automatique
+  - Logs de debug professionnels avec couleurs
+  - Monitoring et analytics intégrés
+- **Types TypeScript complets et stricts**
+  - Interface `User` avec informations KYC
+  - Interface `Wallet` pour les portefeuilles Safe
+  - Interface `Transaction` pour les transactions blockchain
+  - Interface `Operation` pour les opérations utilisateur
+  - Interface `Balance` pour les soldes
+  - Types WebAuthn conformes aux standards
+  - Validation des données d'entrée
+  - IntelliSense complet et autocomplétion
+- **Architecture modulaire et extensible**
+  - Client principal `IbexClient` centralisé
+  - Services spécialisés (Auth, Wallet, Transaction, KYC, IbexSafe)
+  - Client API HTTP avec cache intelligent
+  - Gestionnaire de cache avec TTL et invalidation par tags
+  - Système de logging professionnel avec niveaux
+  - Utilitaires de formatage et validation
+- **Configuration flexible et intelligente**
+  - Auto-détection de l'environnement
+  - Configuration par variables d'environnement
+  - Support multi-environnements (dev, staging, production)
+  - Validation automatique de la configuration
+- **Documentation complète et exhaustive**
+  - Guide de démarrage rapide avec exemples
+  - Documentation détaillée du hook `useIbex`
+  - Référence API complète avec types
+  - Guide de configuration avancée
+  - Guide des types TypeScript
+  - Exemples pratiques et cas d'usage
+  - FAQ et dépannage
+- **Formatage natif**
+  - Formatage des montants localisé
+  - Formatage des dates localisé
+- **Cache intelligent et performance**
+  - Invalidation par tags et patterns
+  - Nettoyage automatique des entrées expirées
+  - Statistiques de cache
+  - Optimisation des requêtes API
+- **Sécurité de niveau entreprise**
+  - Authentification sans mot de passe
+  - Validation stricte des données utilisateur
+  - Validation des domaines autorisés
+
+## Notes de version
+
+### Version 1.0.0 - Révolution de la simplicité
+
+Le SDK IBEX 1.0.0 introduit une architecture simplifiée qui réduit la complexité tout en offrant toutes les fonctionnalités nécessaires pour une application utilisant les APIs IBEX.
+
+#### Innovation majeure : Hook unique `useIbex`
+
+Contrairement aux solutions traditionnelles qui nécessitent des dizaines de hooks et APIs complexes, l'IBEX SDK utilise **un seul hook** qui remplace tout :
+
+```typescript
+// Avant : Complexité extrême
+const { isAuthenticated, isLoading, error } = useAuth();
+const { signUp, signIn, logout, transferEURe, withdrawToIban } = useIbexApi();
+const { user, kyc, wallet } = useAuthData();
+const {
+  balances,
+  loading: balancesLoading,
+  error: balancesError,
+  refresh: refreshBalances,
+} = useBalances();
+const {
+  transactions,
+  loading: transactionsLoading,
+  error: transactionsError,
+  refresh: refreshTransactions,
+} = useTransactions({ limit: 50 });
+const {
+  operations,
+  loading: operationsLoading,
+  error: operationsError,
+  refresh: refreshOperations,
+} = useUserOperations();
+
+// Après : Simplicité révolutionnaire
+const {
+  user,
+  balance,
+  transactions,
+  operations,
+  isLoading,
+  error,
+  signIn,
+  send,
+  receive,
+  withdraw,
+} = useIbex();
+```
+
+#### Fonctionnalités
+
+- **Authentification WebAuthn**
+
+  - Implémentation complète du standard FIDO2
+  - Support natif des passkeys (Touch ID, Face ID, Windows Hello)
+  - Protection anti-phishing intégrée
+  - Gestion automatique des sessions persistantes
+  - Support des clés de sécurité physiques (YubiKey, etc.)
+
+- **Wallets Safe multi-sig avancés**
+
+  - Intégration native avec Gnosis Safe
+  - Création automatique de wallets sécurisés
+  - Gestion des seuils de signature
+  - Support multi-chaînes (Arbitrum Sepolia par défaut)
+  - Opérations Safe simplifiées
+
+- **Transactions blockchain transparentes**
+
+  - Envoi de stablecoins EURe en un clic
+  - Réception de fonds automatique
+  - Historique des transactions en temps réel
+  - Formatage automatique des montants
+  - Validation des adresses Ethereum
+
+- **KYC intégré et automatisé**
+
+  - Interface KYC en iframe sécurisée
+  - Redirection complète avec URL de retour
+  - Gestion de 5 niveaux de vérification
+  - Support multi-langues (français, anglais)
+  - Validation automatique des documents
+
+- **Service IBEX Safe pour données privées**
+  - Stockage sécurisé de données utilisateur
+  - Validation d'email avec codes de confirmation
+  - Gestion des préférences marketing
+  - API REST complète et sécurisée
+
+#### Sécurité
+
+- **Authentification sans mot de passe** : Plus sécurisé que les méthodes traditionnelles
+- **Validation stricte** : Toutes les données utilisateur sont validées
+- **Sessions sécurisées** : Gestion avancée des tokens et refresh
+
+#### Performance
+
+- **Cache multi-niveaux** : TTL configurable et invalidation par tags
+
+#### Documentation exhaustive
+
+- **Guide de démarrage** : Intégration en 5 minutes
+- **Référence API complète** : Tous les types et interfaces documentés
+- **Exemples pratiques** : Dashboard complet avec toutes les fonctionnalités
+- **Support multi-environnements** : Dev, staging, production
+
+#### Impact
+
+Cette version améliore l'expérience développeur :
+
+- **Réduction de complexité** par rapport aux solutions traditionnelles
+- **Temps d'intégration** : de plusieurs jours à quelques minutes
+- **Maintenance simplifiée** : Un seul hook à maintenir au lieu de dizaines
+- **Performance** : Cache intelligent et optimisations automatiques
+- **Sécurité maximale** : WebAuthn et validation stricte
+- **Accessibilité native** : Conformité WCAG dès la première ligne
+
+## Support
+
+Pour toute question sur les versions ou la migration :
+
+- **Documentation** : [docs/](./docs/)
+- **Issues** : [GitHub Issues](https://github.com/AbsconseOfficiel/ibex-sdk/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/AbsconseOfficiel/ibex-sdk/discussions)
+- **Support** : [Linkedin](https://www.linkedin.com/in/dylanenjolvin/)
+
+---
+
+**Ce changelog est maintenu automatiquement. Pour des questions spécifiques, consultez la [documentation](./docs/) ou contactez le support.**
