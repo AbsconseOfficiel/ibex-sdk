@@ -6,9 +6,9 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
-[Types d'authentification](#types-dauthentification) • [Types de données](#types-de-données) • [Types d'actions](#types-dactions) • [Types d'erreurs](#types-derreurs)
+[Types d'authentification](#types-dauthentification) • [Types de données](#types-de-données) • [Types WebSocket](#types-websocket) • [Types d'actions](#types-dactions) • [Types d'erreurs](#types-derreurs)
 
 </div>
 
@@ -122,6 +122,75 @@ interface KycInfo {
 - `pending` : En attente de vérification
 - `verified` : Vérifié et approuvé
 - `rejected` : Rejeté ou en échec
+
+---
+
+## Types WebSocket
+
+### Messages WebSocket gérés
+
+L'architecture hybride utilise des messages WebSocket spécifiques selon la documentation IBEX :
+
+```typescript
+// Messages WebSocket principaux
+type WebSocketMessage =
+  | { type: 'auth_success'; data: AuthSuccessData }
+  | { type: 'balance_data'; data: BalanceData }
+  | { type: 'transaction_data'; data: TransactionData }
+  | { type: 'user_data'; data: UserData }
+  | { type: 'balance_update'; data: BalanceUpdateData }
+  | { type: 'new_transaction'; data: TransactionData }
+  | { type: 'operation_update'; data: OperationData }
+  | { type: 'new_operation'; data: OperationData };
+
+// Types de données WebSocket
+interface AuthSuccessData {
+  safeAddress: string;
+  message: string;
+}
+
+interface BalanceData {
+  balance: number;
+  symbol: string;
+  usdValue?: number;
+}
+
+interface TransactionData {
+  transactions: Transaction[];
+}
+
+interface UserData {
+  user: User;
+  wallet: Wallet;
+}
+
+interface BalanceUpdateData {
+  balance: number;
+  symbol: string;
+  usdValue?: number;
+}
+
+interface OperationData {
+  operations: Operation[];
+}
+```
+
+### Callbacks WebSocket
+
+```typescript
+interface WebSocketCallbacks {
+  onAuthSuccess: (data: AuthSuccessData) => void;
+  onBalanceUpdate: (data: BalanceUpdateData) => void;
+  onTransactionData: (data: TransactionData) => void;
+  onNewTransaction: (data: TransactionData) => void;
+  onUserData: (data: UserData) => void;
+  onOperationData: (data: OperationData) => void;
+  onOperationUpdate: (data: OperationData) => void;
+  onNewOperation: (data: OperationData) => void;
+  onConnectionChange: (connected: boolean) => void;
+  onError: (error: string) => void;
+}
+```
 
 ---
 

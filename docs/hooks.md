@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
 [Vue d'ensemble](#vue-densemble) • [Interface complète](#interface-complète) • [Exemples d'utilisation](#exemples-dutilisation) • [Bonnes pratiques](#bonnes-pratiques)
 
@@ -26,10 +26,11 @@ Le hook `useIbex()` est un hook React personnalisé qui :
 
 ### Fonctionnalités principales
 
-- Centralise toutes les données IBEX (utilisateur, transactions, soldes)
-- Fournit des actions simples pour les opérations financières
-- Gère automatiquement l'état de l'application (chargement, erreurs)
-- Simplifie l'authentification et la gestion des sessions
+- **Architecture hybride** : API REST (données initiales) + WebSocket (temps réel)
+- **Données centralisées** : Utilisateur, transactions, opérations, soldes
+- **Actions simplifiées** : Authentification, transferts, KYC, opérations
+- **Temps réel** : Mises à jour automatiques via WebSocket
+- **Gestion d'état** : Chargement, erreurs, connexion WebSocket
 
 </td>
 <td width="50%">
@@ -48,6 +49,37 @@ L'IBEX SDK révolutionne cette approche avec **un seul hook** qui remplace tout.
 </td>
 </tr>
 </table>
+
+---
+
+## Architecture du SDK
+
+### Flux de données optimisé
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API REST      │    │   WebSocket     │    │   Interface     │
+│   (Initial)     │    │   (Temps Réel)  │    │   Utilisateur   │
+│                 │    │                 │    │                 │
+│ • Operations    │───▶│ • Balance       │───▶│ • Solde         │
+│   (1x au start) │    │ • Transactions  │    │ • Historique    │
+│                 │    │ • Opérations    │    │ • Opérations    │
+│                 │    │ • Utilisateur   │    │ • Mises à jour  │
+│                 │    │ • Mises à jour  │    │   temps réel    │
+│                 │    │   automatiques  │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Messages WebSocket gérés
+
+- **`auth_success`** → Connexion établie
+- **`balance_data`** → Solde initial
+- **`transaction_data`** → Transactions initiales
+- **`user_data`** → Données utilisateur
+- **`balance_update`** → Mises à jour solde
+- **`new_transaction`** → Nouvelles transactions
+- **`operation_update`** → Mises à jour opérations
+- **`new_operation`** → Nouvelles opérations
 
 ---
 

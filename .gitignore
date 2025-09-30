@@ -109,3 +109,4 @@ temp/
 # Local development
 .local
 .cache
+.cursor

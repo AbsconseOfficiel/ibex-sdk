@@ -27,6 +27,13 @@ export { useIbex } from './hooks/useIbex';
 export { IbexProvider } from './context/IbexProvider';
 
 // ============================================================================
+// CORE
+// ============================================================================
+
+// Client IBEX simplifié
+export { IbexClient } from './core/IbexClient';
+
+// ============================================================================
 // UTILITAIRES
 // ============================================================================
 
@@ -77,15 +84,8 @@ export type {
 // ============================================================================
 
 // Clients principaux
-export { IbexClient } from './core/IbexClient';
 export { ApiClient } from './core/ApiClient';
 export { CacheManager } from './core/CacheManager';
 
 // Services internes
-export { AuthService } from './services/AuthService';
-export { WalletService } from './services/WalletService';
-export { TransactionService } from './services/TransactionService';
-export { KycService } from './services/KycService';
-export { IbexSafeService } from './services/IbexSafeService';
 export { WebSocketService } from './services/WebSocketService';
-export { WebSocketManager } from './services/WebSocketManager';

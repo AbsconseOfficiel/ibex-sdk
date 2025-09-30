@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
 [Démarrage rapide](#démarrage-rapide) • [Guides disponibles](#guides-disponibles) • [Support](#support-et-communauté)
 

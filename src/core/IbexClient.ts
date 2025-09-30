@@ -1,151 +1,304 @@
 // Copyright 2025 Dylan Enjolvin
 // Licensed under the Apache License, Version 2.0
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-// GitHub: https://github.com/AbsconseOfficiel
-// LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
 /**
- * Client IBEX principal
- * Architecture simplifiée conforme au Swagger IBEX
+ * Client IBEX simplifié - Conforme au Swagger officiel
  */
 
 import { ApiClient } from './ApiClient';
-import { AuthService } from '../services/AuthService';
-import { WalletService } from '../services/WalletService';
-import { TransactionService } from '../services/TransactionService';
-import { KycService } from '../services/KycService';
-import { IbexSafeService } from '../services/IbexSafeService';
 import { CacheManager } from './CacheManager';
-import type {
-  IbexConfig,
-  AuthResponse,
-  UserDetails,
-  WalletAddressesResponse,
-  SupportedChainIdsResponse,
-  UserOperationsResponse,
-  BalanceResponse,
-  TransactionsResponse,
-} from '../types';
+import {
+  prepareWebAuthnRegistrationOptions,
+  prepareWebAuthnAuthenticationOptions,
+} from '../utils/webauthn';
+import type { IbexConfig, AuthResponse } from '../types';
 
 /**
- * Client IBEX principal - API unifiée et simplifiée
- * Conforme au Swagger IBEX : https://passkeys-testnet-app-testnet.cryptosimple.app/openapi.json
+ * Client IBEX simplifié - Accès direct aux services
  */
 export class IbexClient {
-  private apiClient: ApiClient;
-  private cacheManager: CacheManager;
-
-  // Services spécialisés
-  public readonly auth: AuthService;
-  public readonly wallet: WalletService;
-  public readonly transactions: TransactionService;
-  public readonly kyc: KycService;
-  public readonly ibexSafe: IbexSafeService;
+  public readonly apiClient: ApiClient;
+  public readonly cacheManager: CacheManager;
 
   constructor(config: IbexConfig) {
-    // Initialiser le client API
     this.apiClient = new ApiClient(config);
-
-    // Initialiser le gestionnaire de cache
     this.cacheManager = new CacheManager();
-
-    // Initialiser les services
-    this.auth = new AuthService(this.apiClient, this.cacheManager);
-    this.wallet = new WalletService(this.apiClient, this.cacheManager);
-    this.transactions = new TransactionService(this.apiClient, this.cacheManager);
-    this.kyc = new KycService(this.apiClient, this.cacheManager);
-    this.ibexSafe = new IbexSafeService(this.apiClient, this.cacheManager);
   }
 
   // ========================================================================
-  // AUTHENTIFICATION SIMPLIFIÉE
+  // AUTHENTIFICATION
   // ========================================================================
 
   /**
    * Inscription d'un nouvel utilisateur
+   * GET /v1/auth/sign-up -> POST /v1/auth/sign-up
    */
   async signUp(passkeyName?: string): Promise<AuthResponse> {
-    return this.auth.signUp(passkeyName);
+    // 1. Obtenir les options d'inscription
+    const challengeResponse = await this.apiClient.request<{
+      credentialRequestOptions: unknown;
+    }>('/v1/auth/sign-up', { method: 'GET' });
+
+    // 2. Préparer les options WebAuthn
+    const options = prepareWebAuthnRegistrationOptions(challengeResponse.credentialRequestOptions);
+
+    // 3. Créer les credentials WebAuthn
+    const credential = await navigator.credentials.create({
+      publicKey: options as any,
+    });
+
+    if (!credential) {
+      throw new Error('Échec de la création des credentials');
+    }
+
+    // 3. Finaliser l'inscription
+    const authResponse = await this.apiClient.request<AuthResponse>('/v1/auth/sign-up', {
+      method: 'POST',
+      body: {
+        credential,
+        chainId: 421614,
+        keyName: passkeyName,
+        keyDisplayName: passkeyName,
+      },
+    });
+
+    // 4. Sauvegarder les tokens
+    if (authResponse.access_token) {
+      this.apiClient.setTokens(authResponse.access_token, authResponse.refresh_token);
+    }
+
+    return authResponse;
   }
 
   /**
    * Connexion d'un utilisateur existant
+   * GET /v1/auth/sign-in -> POST /v1/auth/sign-in
    */
   async signIn(): Promise<AuthResponse> {
-    return this.auth.signIn();
+    // 1. Obtenir les options de connexion
+    const challengeResponse = await this.apiClient.request<{
+      credentialRequestOptions: unknown;
+    }>('/v1/auth/sign-in', { method: 'GET' });
+
+    // 2. Préparer les options WebAuthn
+    const options = prepareWebAuthnAuthenticationOptions(
+      challengeResponse.credentialRequestOptions
+    );
+
+    // 3. Obtenir les credentials WebAuthn
+    const credential = await navigator.credentials.get({
+      publicKey: options as any,
+    });
+
+    if (!credential) {
+      throw new Error("Échec de l'authentification");
+    }
+
+    // 4. Finaliser la connexion
+    const authResponse = await this.apiClient.request<AuthResponse>('/v1/auth/sign-in', {
+      method: 'POST',
+      body: { credential, chainId: 421614 },
+    });
+
+    // 4. Sauvegarder les tokens
+    if (authResponse.access_token) {
+      this.apiClient.setTokens(authResponse.access_token, authResponse.refresh_token);
+    }
+
+    return authResponse;
   }
 
   /**
    * Déconnexion de l'utilisateur
    */
   async logout(): Promise<void> {
-    await this.auth.logout();
-    this.clearCache();
+    this.apiClient.clearTokens();
+    this.cacheManager.clear();
   }
+
+  // ========================================================================
+  // DONNÉES UTILISATEUR
+  // ========================================================================
 
   /**
    * Récupérer les détails de l'utilisateur
+   * GET /v1/users/me
    */
-  async getUserDetails(): Promise<UserDetails> {
-    return this.auth.getUserDetails();
-  }
+  async getUserDetails(): Promise<unknown> {
+    const cacheKey = 'user_details';
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
 
-  // ========================================================================
-  // GESTION DU PORTEFEUILLE
-  // ========================================================================
+    const userDetails = await this.apiClient.request('/v1/users/me', {
+      cache: true,
+      cacheTTL: 30000,
+    });
+
+    this.cacheManager.set(cacheKey, userDetails, 30000, ['user']);
+    return userDetails;
+  }
 
   /**
    * Récupérer les adresses du portefeuille
+   * GET /v1/users/me/address
    */
-  async getWalletAddresses(): Promise<WalletAddressesResponse> {
-    return this.wallet.getAddresses();
+  async getWalletAddresses(): Promise<unknown> {
+    const cacheKey = 'wallet_addresses';
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const addresses = await this.apiClient.request('/v1/users/me/address', {
+      cache: true,
+      cacheTTL: 300000,
+    });
+
+    this.cacheManager.set(cacheKey, addresses, 300000, ['wallet']);
+    return addresses;
   }
 
   /**
    * Récupérer les chain IDs supportés
+   * GET /v1/users/me/chainid
    */
-  async getSupportedChainIds(): Promise<SupportedChainIdsResponse> {
-    return this.wallet.getChainIds();
+  async getSupportedChainIds(): Promise<unknown> {
+    const cacheKey = 'supported_chain_ids';
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const chainIds = await this.apiClient.request('/v1/users/me/chainid', {
+      cache: true,
+      cacheTTL: 300000,
+    });
+
+    this.cacheManager.set(cacheKey, chainIds, 300000, ['wallet']);
+    return chainIds;
   }
 
   /**
    * Récupérer les opérations utilisateur
+   * GET /v1/users/me/operations
    */
-  async getUserOperations(): Promise<UserOperationsResponse> {
-    return this.wallet.getOperations();
+  async getUserOperations(): Promise<unknown> {
+    const cacheKey = 'user_operations';
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const operations = await this.apiClient.request('/v1/users/me/operations', {
+      cache: true,
+      cacheTTL: 30000,
+    });
+
+    this.cacheManager.set(cacheKey, operations, 30000, ['operations']);
+    return operations;
   }
 
   // ========================================================================
-  // TRANSACTIONS ET BALANCES
+  // BLOCKCHAIN DATA
   // ========================================================================
 
   /**
    * Récupérer les balances
+   * GET /v1/bcreader/balances
    */
-  async getBalances(address?: string): Promise<BalanceResponse> {
-    return this.transactions.getBalances(address);
+  async getBalances(address?: string): Promise<unknown> {
+    const cacheKey = `balances_${address || 'default'}`;
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const balances = await this.apiClient.request('/v1/bcreader/balances', {
+      queryParams: address ? { address } : {},
+      cache: true,
+      cacheTTL: 30000,
+    });
+
+    this.cacheManager.set(cacheKey, balances, 30000, ['balance']);
+    return balances;
   }
 
   /**
    * Récupérer les transactions
+   * GET /v1/bcreader/transactions
    */
-  async getTransactions(options: Record<string, unknown> = {}): Promise<TransactionsResponse> {
-    return this.transactions.getTransactions(options);
+  async getTransactions(
+    options: {
+      address?: string;
+      startDate?: string;
+      endDate?: string;
+      limit?: number;
+      page?: number;
+    } = {}
+  ): Promise<unknown> {
+    const { address, startDate, endDate, limit = 50, page = 1 } = options;
+
+    const queryParams: Record<string, unknown> = {
+      limit: Math.min(limit, 100),
+      page: Math.max(page, 1),
+    };
+
+    if (address) queryParams.address = address;
+    if (startDate) queryParams.startDate = startDate;
+    if (endDate) queryParams.endDate = endDate;
+
+    const cacheKey = `transactions_${JSON.stringify(queryParams)}`;
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const transactions = await this.apiClient.request('/v1/bcreader/transactions', {
+      queryParams,
+      cache: true,
+      cacheTTL: 60000,
+    });
+
+    this.cacheManager.set(cacheKey, transactions, 60000, ['transactions']);
+    return transactions;
   }
 
   // ========================================================================
-  // OPÉRATIONS SAFE
+  // SAFE OPERATIONS
   // ========================================================================
 
   /**
+   * Préparer une opération Safe
+   * POST /v1/safes/operations
+   */
+  async prepareSafeOperation(
+    safeAddress: string,
+    chainId: number,
+    operations: unknown[]
+  ): Promise<unknown> {
+    return this.apiClient.request('/v1/safes/operations', {
+      method: 'POST',
+      body: { safeAddress, chainId, operations },
+    });
+  }
+
+  /**
    * Exécuter une opération Safe
+   * PUT /v1/safes/operations
    */
   async executeSafeOperation(
     safeAddress: string,
     chainId: number,
     operations: unknown[]
   ): Promise<unknown> {
-    return this.wallet.executeSafeOperation(safeAddress, chainId, operations);
+    // 1. Préparer l'opération
+    const preparation = await this.prepareSafeOperation(safeAddress, chainId, operations);
+
+    // 2. Signer avec WebAuthn
+    const credential = await navigator.credentials.get({
+      publicKey: (preparation as any).credentialRequestOptions,
+    });
+
+    if (!credential) {
+      throw new Error('Échec de la signature WebAuthn');
+    }
+
+    // 3. Exécuter l'opération
+    return this.apiClient.request('/v1/safes/operations', {
+      method: 'PUT',
+      body: { credential },
+    });
   }
 
   /**
@@ -157,28 +310,15 @@ export class IbexClient {
     to: string,
     amount: string
   ): Promise<unknown> {
-    return this.wallet.transferEURe(safeAddress, chainId, to, amount);
-  }
+    const operations = [
+      {
+        type: 'TRANSFER_EURe',
+        to,
+        amount,
+      },
+    ];
 
-  /**
-   * Créer un IBAN
-   */
-  async createIban(safeAddress: string, chainId: number): Promise<unknown> {
-    return this.wallet.createIban(safeAddress, chainId);
-  }
-
-  /**
-   * Retrait vers IBAN
-   */
-  async withdrawToIban(
-    safeAddress: string,
-    chainId: number,
-    amount: string,
-    iban: string,
-    label?: string,
-    recipientInfo?: unknown
-  ): Promise<unknown> {
-    return this.wallet.withdrawToIban(safeAddress, chainId, amount, iban, label, recipientInfo);
+    return this.executeSafeOperation(safeAddress, chainId, operations);
   }
 
   // ========================================================================
@@ -187,16 +327,31 @@ export class IbexClient {
 
   /**
    * Créer un iframe KYC
+   * POST /v1/auth/iframe
    */
   async createKycIframe(language: string = 'fr'): Promise<unknown> {
-    return this.kyc.createIframe(language);
+    return this.apiClient.request('/v1/auth/iframe', {
+      method: 'POST',
+      body: { language },
+      cache: false,
+    });
   }
 
   /**
    * Créer une URL de redirection complète pour le KYC
    */
-  async createKycRedirectUrl(language: string = 'fr', appUrl?: string): Promise<string> {
-    return this.kyc.createKycRedirectUrl(language, appUrl);
+  async createKycRedirectUrl(
+    language: string = 'fr',
+    appUrl: string = window.location.origin
+  ): Promise<string> {
+    const response = (await this.createKycIframe(language)) as {
+      chatbotURL: string;
+      sessionId: string;
+    };
+
+    return `${response.chatbotURL}?session=${response.sessionId}&returnUrl=${encodeURIComponent(
+      appUrl
+    )}`;
   }
 
   // ========================================================================
@@ -205,45 +360,82 @@ export class IbexClient {
 
   /**
    * Récupérer les données utilisateur privées
+   * GET /v1/ibexsafe/userdata/external/{externalUserId}
    */
-  async getUserPrivateData(externalUserId: string): Promise<Record<string, unknown>> {
-    return this.ibexSafe.getUserData(externalUserId);
+  async getUserPrivateData(externalUserId: string): Promise<unknown> {
+    const cacheKey = `user_data_${externalUserId}`;
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const userData = await this.apiClient.request(
+      `/v1/ibexsafe/userdata/external/${externalUserId}`,
+      {
+        cache: true,
+        cacheTTL: 300000,
+      }
+    );
+
+    this.cacheManager.set(cacheKey, userData, 300000, ['ibex_safe']);
+    return userData;
   }
 
   /**
    * Sauvegarder les données utilisateur privées
+   * POST /v1/ibexsafe/userdata
    */
   async saveUserPrivateData(
     externalUserId: string,
     data: Record<string, unknown>
   ): Promise<{ success: boolean }> {
-    return this.ibexSafe.saveUserData(externalUserId, data);
+    const result = await this.apiClient.request<{ success: boolean }>('/v1/ibexsafe/userdata', {
+      method: 'POST',
+      body: { externalUserId, data },
+      cache: false,
+    });
+
+    // Invalider le cache
+    this.cacheManager.invalidateByPattern(`user_data_${externalUserId}`);
+    return result;
   }
 
   /**
    * Valider un email
+   * POST /v1/ibexsafe/validateEmail
    */
   async validateEmail(email: string, externalUserId: string): Promise<unknown> {
-    return this.ibexSafe.validateEmail(email, externalUserId);
+    return this.apiClient.request('/v1/ibexsafe/validateEmail', {
+      method: 'POST',
+      body: { email, externalUserId },
+      cache: false,
+    });
   }
 
   /**
    * Confirmer un email
+   * POST /v1/ibexsafe/confirmEmail
    */
   async confirmEmail(
     email: string,
     code: string,
     externalUserId: string,
-    options?: unknown
+    options: {
+      userDataName?: string;
+      optinNews?: boolean;
+      optinNotifications?: boolean;
+    } = {}
   ): Promise<unknown> {
-    return this.ibexSafe.confirmEmail(
-      email,
-      code,
-      externalUserId,
-      options as
-        | { userDataName?: string; optinNews?: boolean; optinNotifications?: boolean }
-        | undefined
-    );
+    return this.apiClient.request('/v1/ibexsafe/confirmEmail', {
+      method: 'POST',
+      body: {
+        email,
+        code,
+        externalUserId,
+        userDataName: options.userDataName || 'marketing.email',
+        optinNews: options.optinNews,
+        optinNotifications: options.optinNotifications,
+      },
+      cache: false,
+    });
   }
 
   // ========================================================================
@@ -252,9 +444,20 @@ export class IbexClient {
 
   /**
    * Récupérer le statut de récupération
+   * GET /v1/recovery/status/{safeAddress}
    */
   async getRecoveryStatus(safeAddress: string): Promise<unknown> {
-    return this.wallet.getRecoveryStatus(safeAddress);
+    const cacheKey = `recovery_status_${safeAddress}`;
+    const cached = this.cacheManager.get<unknown>(cacheKey);
+    if (cached) return cached;
+
+    const status = await this.apiClient.request(`/v1/recovery/status/${safeAddress}`, {
+      cache: true,
+      cacheTTL: 60000,
+    });
+
+    this.cacheManager.set(cacheKey, status, 60000, ['wallet']);
+    return status;
   }
 
   // ========================================================================
@@ -278,6 +481,7 @@ export class IbexClient {
 
   /**
    * Vérifier la santé de l'API
+   * GET /health
    */
   async getHealth(): Promise<unknown> {
     return this.apiClient.request('/health');

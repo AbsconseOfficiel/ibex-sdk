@@ -1,7 +1,7 @@
 {
   "name": "@absconse/ibex-sdk",
-  "version": "1.1.0",
-  "description": "SDK simplifié pour l'intégration des services IBEX - API unifiée avec 90% de réduction de complexité",
+  "version": "1.1.1",
+  "description": "SDK optimisé pour l'intégration des services IBEX - Architecture hybride (API REST + WebSocket) avec 90% de réduction de requêtes",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",

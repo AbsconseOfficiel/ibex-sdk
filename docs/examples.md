@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
 [Exemples de base](#exemples-de-base) • [Composants d'interface](#composants-dinterface) • [Applications complètes](#applications-complètes)
 
@@ -15,6 +15,41 @@
 ---
 
 ## Exemples de base
+
+### Architecture hybride en action
+
+Exemple montrant comment l'architecture API REST + WebSocket fonctionne en pratique.
+
+```tsx
+// src/components/DataFlowExample.tsx
+import React, { useEffect } from 'react';
+import { useIbex } from '@absconse/ibex-sdk';
+
+function DataFlowExample() {
+  const { user, balance, transactions, operations, isWebSocketConnected, isLoading } =
+    useIbex(config);
+
+  useEffect(() => {
+    console.log('🔄 Flux de données:');
+    console.log('📊 Données initiales (API REST):');
+    console.log('  - Opérations:', operations.length);
+    console.log('🌐 Mises à jour temps réel (WebSocket):');
+    console.log('  - Connexion:', isWebSocketConnected);
+    console.log('  - Solde:', balance);
+    console.log('  - Transactions:', transactions.length);
+  }, [operations, transactions, balance, isWebSocketConnected]);
+
+  return (
+    <div>
+      <h3>Architecture hybride en action</h3>
+      <p>Opérations (API REST): {operations.length}</p>
+      <p>Transactions (WebSocket): {transactions.length}</p>
+      <p>Solde temps réel: {balance} EURe</p>
+      <p>WebSocket: {isWebSocketConnected ? '✅ Connecté' : '❌ Déconnecté'}</p>
+    </div>
+  );
+}
+```
 
 ### Application de connexion simple
 

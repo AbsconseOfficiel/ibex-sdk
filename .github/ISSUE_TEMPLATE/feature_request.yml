@@ -1,0 +1,142 @@
+name: Feature Request
+description: Proposer une nouvelle fonctionnalité ou amélioration
+title: '[FEATURE] '
+labels: ['enhancement', 'needs-triage']
+assignees: ['AbsconseOfficiel']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de proposer cette fonctionnalité !
+
+        **Avant de créer cette issue, vérifiez :**
+        - [ ] La fonctionnalité n'a pas déjà été demandée
+        - [ ] Elle s'aligne avec la vision du SDK
+        - [ ] Elle apporte une valeur réelle aux utilisateurs
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description de la fonctionnalité
+      description: Décrivez clairement la fonctionnalité souhaitée
+      placeholder: 'Ajouter un hook useIbexBalance() pour gérer les soldes...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème à résoudre
+      description: Quel problème cette fonctionnalité résoudrait-elle ?
+      placeholder: 'Actuellement, il est difficile de gérer les soldes multiples...'
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Décrivez votre solution idéale
+      placeholder: 'Un hook dédié qui retourne les soldes avec des helpers...'
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considérées
+      description: Avez-vous considéré d'autres solutions ?
+      placeholder: "J'ai essayé d'utiliser useIbex() mais c'est trop complexe..."
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorité
+      description: Quelle est la priorité de cette fonctionnalité ?
+      options:
+        - "🔴 Critique - Bloque l'utilisation"
+        - "🟡 Important - Améliore l'expérience"
+        - '🟢 Nice to have - Amélioration mineure'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Catégorie
+      description: Dans quelle catégorie cette fonctionnalité s'inscrit-elle ?
+      options:
+        - '🔐 Authentification'
+        - '💰 Transactions'
+        - '🏦 Portefeuille'
+        - '📊 Données'
+        - '🌐 WebSocket'
+        - '🛠️ API'
+        - '📱 Interface'
+        - '🔧 Utilitaires'
+        - 'Autre'
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Cas d'usage
+      description: Décrivez les cas d'usage concrets
+      placeholder: |
+        - Dashboard financier avec soldes multiples
+        - Application de trading
+        - Interface de gestion de portefeuille
+        - etc.
+
+  - type: textarea
+    id: api-design
+    attributes:
+      label: Design de l'API
+      description: Comment imaginez-vous l'utilisation de cette fonctionnalité ?
+      placeholder: |
+        ```typescript
+        const { balances, refreshBalances } = useIbexBalance();
+
+        // Ou
+        const { getBalance, getBalances } = useIbex();
+        ```
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implémentation
+      description: Avez-vous des idées sur l'implémentation ?
+      placeholder: "Cette fonctionnalité pourrait utiliser l'API /balances et le WebSocket balance_update..."
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Changements breaking
+      description: Cette fonctionnalité nécessiterait-elle des changements breaking ?
+      placeholder: "Non, c'est une addition. / Oui, il faudrait modifier l'interface useIbex()..."
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications
+      description: Cochez les éléments qui s'appliquent
+      options:
+        - label: "J'ai vérifié que cette fonctionnalité n'existe pas déjà"
+          required: true
+        - label: 'Cette fonctionnalité apporte une valeur réelle'
+          required: true
+        - label: "J'ai fourni suffisamment de détails"
+          required: true
+        - label: "Je suis prêt à contribuer à l'implémentation (optionnel)"
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Impact attendu
+
+        **Utilisateurs affectés :** Combien d'utilisateurs bénéficieraient de cette fonctionnalité ?
+
+        **Effort de développement :** Estimez-vous que c'est simple, moyen ou complexe à implémenter ?
+
+        **Compatibilité :** Cette fonctionnalité est-elle compatible avec l'architecture actuelle ?
+
+        **Merci de votre contribution !**

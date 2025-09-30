@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions GitHub
+    url: https://github.com/AbsconseOfficiel/ibex-sdk/discussions
+    about: Poser des questions générales et discuter avec la communauté
+  - name: Documentation
+    url: https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs
+    about: Consulter la documentation complète du SDK
