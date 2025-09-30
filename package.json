@@ -1,6 +1,6 @@
 {
   "name": "@absconse/ibex-sdk",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "SDK simplifié pour l'intégration des services IBEX - API unifiée avec 90% de réduction de complexité",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -93,7 +93,7 @@
     "rimraf": "^5.0.0",
     "ts-jest": "^29.4.4",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.3.0"
   },
   "publishConfig": {
     "access": "public",

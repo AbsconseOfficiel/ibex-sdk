@@ -26,12 +26,12 @@ export class IbexSafeService {
    * Récupérer les données utilisateur privées
    * GET /v1/ibexsafe/userdata/external/{externalUserId}
    */
-  async getUserData(externalUserId: string): Promise<Record<string, any>> {
+  async getUserData(externalUserId: string): Promise<Record<string, unknown>> {
     const cacheKey = `user_data_${externalUserId}`;
-    const cached = this.cacheManager.get<Record<string, any>>(cacheKey);
+    const cached = this.cacheManager.get<Record<string, unknown>>(cacheKey);
     if (cached) return cached;
 
-    const userData = await this.apiClient.request<Record<string, any>>(
+    const userData = await this.apiClient.request<Record<string, unknown>>(
       `/v1/ibexsafe/userdata/external/${externalUserId}`,
       {
         cache: true,
@@ -49,7 +49,7 @@ export class IbexSafeService {
    */
   async saveUserData(
     externalUserId: string,
-    data: Record<string, any>
+    data: Record<string, unknown>
   ): Promise<{ success: boolean }> {
     const result = await this.apiClient.request<{ success: boolean }>('/v1/ibexsafe/userdata', {
       method: 'POST',
@@ -74,7 +74,7 @@ export class IbexSafeService {
    * Valider un email
    * POST /v1/ibexsafe/validateEmail
    */
-  async validateEmail(email: string, externalUserId: string): Promise<any> {
+  async validateEmail(email: string, externalUserId: string): Promise<unknown> {
     return this.apiClient.request('/v1/ibexsafe/validateEmail', {
       method: 'POST',
       body: {
@@ -98,7 +98,7 @@ export class IbexSafeService {
       optinNews?: boolean;
       optinNotifications?: boolean;
     } = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     return this.apiClient.request('/v1/ibexsafe/confirmEmail', {
       method: 'POST',
       body: {

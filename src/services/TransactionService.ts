@@ -11,6 +11,7 @@
 
 import type { ApiClient } from '../core/ApiClient';
 import { CacheManager } from '../core/CacheManager';
+import type { BalanceResponse, TransactionsResponse } from '../types';
 
 /**
  * Service de gestion des transactions conforme au Swagger IBEX
@@ -26,12 +27,12 @@ export class TransactionService {
    * Récupérer les balances
    * GET /v1/bcreader/balances
    */
-  async getBalances(address?: string): Promise<any> {
+  async getBalances(address?: string): Promise<BalanceResponse> {
     const cacheKey = `balances_${address || 'default'}`;
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<BalanceResponse>(cacheKey);
     if (cached) return cached;
 
-    const balances = await this.apiClient.request('/v1/bcreader/balances', {
+    const balances = await this.apiClient.request<BalanceResponse>('/v1/bcreader/balances', {
       queryParams: address ? { address } : {},
       cache: true,
       cacheTTL: 30000, // Cache 30 secondes
@@ -57,11 +58,11 @@ export class TransactionService {
       limit?: number;
       page?: number;
     } = {}
-  ): Promise<any> {
+  ): Promise<TransactionsResponse> {
     const { address, startDate, endDate, limit = 50, page = 1 } = options;
 
     // Construire les paramètres de requête
-    const queryParams: Record<string, any> = {
+    const queryParams: Record<string, unknown> = {
       limit: Math.min(limit, 100), // Limite maximale de 100
       page: Math.max(page, 1), // Page minimale de 1
     };
@@ -87,14 +88,17 @@ export class TransactionService {
     }
 
     const cacheKey = `transactions_${JSON.stringify(queryParams)}`;
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<TransactionsResponse>(cacheKey);
     if (cached) return cached;
 
-    const transactions = await this.apiClient.request('/v1/bcreader/transactions', {
-      queryParams,
-      cache: true,
-      cacheTTL: 60000, // Cache 1 minute
-    });
+    const transactions = await this.apiClient.request<TransactionsResponse>(
+      '/v1/bcreader/transactions',
+      {
+        queryParams,
+        cache: true,
+        cacheTTL: 60000, // Cache 1 minute
+      }
+    );
 
     this.cacheManager.set(cacheKey, transactions, 60000, [CacheManager.TAGS.TRANSACTIONS]);
     return transactions;
@@ -130,8 +134,8 @@ export class TransactionService {
    * Rafraîchir les données d'une adresse
    */
   async refreshAddressData(address: string): Promise<{
-    balances: any;
-    transactions: any;
+    balances: unknown;
+    transactions: unknown;
   }> {
     // Invalider les caches
     this.invalidateBalanceCache(address);

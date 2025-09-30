@@ -43,9 +43,10 @@ export class AuthService {
     const options = prepareWebAuthnRegistrationOptions(challengeResponse.credentialRequestOptions);
 
     // 3. Ajouter le nom du passkey si fourni
-    if (passkeyName && options.user) {
-      options.user = {
-        ...options.user,
+    const optionsData = options as Record<string, unknown>;
+    if (passkeyName && optionsData.user) {
+      optionsData.user = {
+        ...(optionsData.user as Record<string, unknown>),
         displayName: passkeyName,
         name: passkeyName,
       };
@@ -53,7 +54,7 @@ export class AuthService {
 
     // 4. Créer les credentials
     const credential = await navigator.credentials.create({
-      publicKey: options,
+      publicKey: options as any,
     });
 
     if (!credential) {
@@ -102,7 +103,7 @@ export class AuthService {
 
     // 3. Obtenir les credentials
     const credential = await navigator.credentials.get({
-      publicKey: options,
+      publicKey: options as any,
     });
 
     if (!credential) {
@@ -161,7 +162,6 @@ export class AuthService {
       this.cacheManager.invalidateByTag(CacheManager.TAGS.USER);
     } catch (error) {
       // Ignorer les erreurs de déconnexion
-      console.warn('Erreur lors de la déconnexion:', error);
     }
   }
 
@@ -191,9 +191,9 @@ export class AuthService {
    * Récupérer les adresses de l'utilisateur
    * GET /v1/users/me/address
    */
-  async getUserAddresses(): Promise<any> {
+  async getUserAddresses(): Promise<unknown> {
     const cacheKey = 'user_addresses';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<unknown>(cacheKey);
     if (cached) return cached;
 
     const addresses = await this.apiClient.request('/v1/users/me/address', {
@@ -212,9 +212,9 @@ export class AuthService {
    * Récupérer les chain IDs supportés
    * GET /v1/users/me/chainid
    */
-  async getUserChainIds(): Promise<any> {
+  async getUserChainIds(): Promise<unknown> {
     const cacheKey = 'user_chain_ids';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<unknown>(cacheKey);
     if (cached) return cached;
 
     const chainIds = await this.apiClient.request('/v1/users/me/chainid', {
@@ -230,9 +230,9 @@ export class AuthService {
    * Récupérer les opérations de l'utilisateur
    * GET /v1/users/me/operations
    */
-  async getUserOperations(): Promise<any> {
+  async getUserOperations(): Promise<unknown> {
     const cacheKey = 'user_operations';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<unknown>(cacheKey);
     if (cached) return cached;
 
     const operations = await this.apiClient.request('/v1/users/me/operations', {

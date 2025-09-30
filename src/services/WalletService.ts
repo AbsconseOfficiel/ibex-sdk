@@ -11,6 +11,11 @@
 
 import type { ApiClient } from '../core/ApiClient';
 import { CacheManager } from '../core/CacheManager';
+import type {
+  WalletAddressesResponse,
+  SupportedChainIdsResponse,
+  UserOperationsResponse,
+} from '../types';
 
 /**
  * Service de gestion du portefeuille conforme au Swagger IBEX
@@ -26,9 +31,9 @@ export class WalletService {
    * Récupérer les adresses du portefeuille
    * GET /v1/users/me/address
    */
-  async getAddresses(): Promise<any> {
+  async getAddresses(): Promise<WalletAddressesResponse> {
     const cacheKey = 'wallet_addresses';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<WalletAddressesResponse>(cacheKey);
     if (cached) return cached;
 
     const addresses = await this.apiClient.request('/v1/users/me/address', {
@@ -37,22 +42,25 @@ export class WalletService {
     });
 
     this.cacheManager.set(cacheKey, addresses, 300000, [CacheManager.TAGS.WALLET]);
-    return addresses;
+    return addresses as WalletAddressesResponse;
   }
 
   /**
    * Récupérer les chain IDs supportés
    * GET /v1/users/me/chainid
    */
-  async getChainIds(): Promise<any> {
+  async getChainIds(): Promise<SupportedChainIdsResponse> {
     const cacheKey = 'wallet_chain_ids';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<SupportedChainIdsResponse>(cacheKey);
     if (cached) return cached;
 
-    const chainIds = await this.apiClient.request('/v1/users/me/chainid', {
-      cache: true,
-      cacheTTL: 300000, // Cache 5 minutes
-    });
+    const chainIds = await this.apiClient.request<SupportedChainIdsResponse>(
+      '/v1/users/me/chainid',
+      {
+        cache: true,
+        cacheTTL: 300000, // Cache 5 minutes
+      }
+    );
 
     this.cacheManager.set(cacheKey, chainIds, 300000, [CacheManager.TAGS.WALLET]);
     return chainIds;
@@ -62,15 +70,18 @@ export class WalletService {
    * Récupérer les opérations utilisateur
    * GET /v1/users/me/operations
    */
-  async getOperations(): Promise<any> {
+  async getOperations(): Promise<UserOperationsResponse> {
     const cacheKey = 'wallet_operations';
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<UserOperationsResponse>(cacheKey);
     if (cached) return cached;
 
-    const operations = await this.apiClient.request('/v1/users/me/operations', {
-      cache: true,
-      cacheTTL: 30000, // Cache 30 secondes
-    });
+    const operations = await this.apiClient.request<UserOperationsResponse>(
+      '/v1/users/me/operations',
+      {
+        cache: true,
+        cacheTTL: 30000, // Cache 30 secondes
+      }
+    );
 
     this.cacheManager.set(cacheKey, operations, 30000, [CacheManager.TAGS.OPERATIONS]);
     return operations;
@@ -87,8 +98,8 @@ export class WalletService {
   async prepareSafeOperation(
     safeAddress: string,
     chainId: number,
-    operations: any[]
-  ): Promise<any> {
+    operations: unknown[]
+  ): Promise<unknown> {
     return this.apiClient.request('/v1/safes/operations', {
       method: 'POST',
       body: {
@@ -106,19 +117,20 @@ export class WalletService {
   async executeSafeOperation(
     safeAddress: string,
     chainId: number,
-    operations: any[]
-  ): Promise<any> {
+    operations: unknown[]
+  ): Promise<unknown> {
     // 1. Préparer l'opération
     const preparation = await this.prepareSafeOperation(safeAddress, chainId, operations);
 
     // 2. Signer avec WebAuthn
     const { prepareWebAuthnAuthenticationOptions } = await import('../utils/webauthn');
+    const preparationData = preparation as Record<string, unknown>;
     const preparedOptions = prepareWebAuthnAuthenticationOptions(
-      preparation.credentialRequestOptions
+      preparationData.credentialRequestOptions
     );
 
     const credential = await navigator.credentials.get({
-      publicKey: preparedOptions,
+      publicKey: preparedOptions as any,
     });
 
     if (!credential) {
@@ -144,7 +156,7 @@ export class WalletService {
     chainId: number,
     to: string,
     amount: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const operations = [
       {
         type: 'TRANSFER_EURe',
@@ -163,7 +175,7 @@ export class WalletService {
   /**
    * Créer un IBAN
    */
-  async createIban(safeAddress: string, chainId: number): Promise<any> {
+  async createIban(safeAddress: string, chainId: number): Promise<unknown> {
     const operations = [
       {
         type: 'MONERIUM_CREATE_IBAN',
@@ -182,8 +194,8 @@ export class WalletService {
     amount: string,
     iban: string,
     label?: string,
-    recipientInfo?: any
-  ): Promise<any> {
+    recipientInfo?: unknown
+  ): Promise<unknown> {
     const operations = [
       {
         type: 'MONERIUM_WITHDRAW_EURe',
@@ -205,9 +217,9 @@ export class WalletService {
    * Récupérer le statut de récupération
    * GET /v1/recovery/status/{safeAddress}
    */
-  async getRecoveryStatus(safeAddress: string): Promise<any> {
+  async getRecoveryStatus(safeAddress: string): Promise<unknown> {
     const cacheKey = `recovery_status_${safeAddress}`;
-    const cached = this.cacheManager.get<any>(cacheKey);
+    const cached = this.cacheManager.get<WalletAddressesResponse>(cacheKey);
     if (cached) return cached;
 
     const status = await this.apiClient.request(`/v1/recovery/status/${safeAddress}`, {

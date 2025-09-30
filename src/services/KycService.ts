@@ -67,14 +67,15 @@ export class KycService {
    * Le statut KYC est inclus dans /v1/users/me via le champ 'ky'
    * Cette méthode extrait le statut depuis les détails utilisateur
    */
-  getKycStatusFromUserDetails(userDetails: any): {
+  getKycStatusFromUserDetails(userDetails: unknown): {
     status: 'pending' | 'verified' | 'rejected';
     level: number;
     label: string;
     description: string;
   } {
-    const kyLevel = userDetails.ky || '0';
-    const level = parseInt(kyLevel, 10);
+    const userData = userDetails as Record<string, unknown>;
+    const kyLevel = userData.ky || '0';
+    const level = parseInt(String(kyLevel), 10);
 
     // Mapping des statuts selon les spécifications IBEX
     const status = level >= 5 ? 'verified' : 'pending';

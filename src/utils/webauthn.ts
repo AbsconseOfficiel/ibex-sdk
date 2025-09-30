@@ -12,7 +12,7 @@
 /**
  * Convertit un challenge en ArrayBuffer pour WebAuthn
  */
-export function challengeToArrayBuffer(challenge: any): ArrayBuffer {
+export function challengeToArrayBuffer(challenge: unknown): ArrayBuffer {
   if (challenge instanceof ArrayBuffer) return challenge;
   if (challenge instanceof Uint8Array) return challenge.buffer as ArrayBuffer;
 
@@ -49,8 +49,9 @@ export function challengeToArrayBuffer(challenge: any): ArrayBuffer {
 /**
  * Prépare les options WebAuthn pour l'inscription
  */
-export function prepareWebAuthnRegistrationOptions(options: any): any {
-  const prepared = { ...options };
+export function prepareWebAuthnRegistrationOptions(options: unknown): unknown {
+  if (!options || typeof options !== 'object') return options;
+  const prepared = { ...(options as Record<string, unknown>) };
 
   // Convertir le challenge
   if (prepared.challenge) {
@@ -58,12 +59,22 @@ export function prepareWebAuthnRegistrationOptions(options: any): any {
   }
 
   // Convertir l'ID utilisateur
-  if (prepared.user?.id) {
-    prepared.user.id = challengeToArrayBuffer(prepared.user.id);
+  if (
+    prepared.user &&
+    typeof prepared.user === 'object' &&
+    (prepared.user as Record<string, unknown>).id
+  ) {
+    (prepared.user as Record<string, unknown>).id = challengeToArrayBuffer(
+      (prepared.user as Record<string, unknown>).id
+    );
   }
 
   // Ajouter les algorithmes supportés
-  if (!prepared.pubKeyCredParams || prepared.pubKeyCredParams.length === 0) {
+  if (
+    !prepared.pubKeyCredParams ||
+    !Array.isArray(prepared.pubKeyCredParams) ||
+    prepared.pubKeyCredParams.length === 0
+  ) {
     prepared.pubKeyCredParams = [
       { type: 'public-key', alg: -7 }, // ES256
       { type: 'public-key', alg: -257 }, // RS256
@@ -95,8 +106,9 @@ export function prepareWebAuthnRegistrationOptions(options: any): any {
 /**
  * Prépare les options WebAuthn pour l'authentification
  */
-export function prepareWebAuthnAuthenticationOptions(options: any): any {
-  const prepared = { ...options };
+export function prepareWebAuthnAuthenticationOptions(options: unknown): unknown {
+  if (!options || typeof options !== 'object') return options;
+  const prepared = { ...(options as Record<string, unknown>) };
 
   // Convertir le challenge
   if (prepared.challenge) {
@@ -104,13 +116,20 @@ export function prepareWebAuthnAuthenticationOptions(options: any): any {
   }
 
   // Convertir les allowCredentials
-  if (prepared.allowCredentials?.length) {
+  if (
+    prepared.allowCredentials &&
+    Array.isArray(prepared.allowCredentials) &&
+    prepared.allowCredentials.length > 0
+  ) {
     prepared.allowCredentials = prepared.allowCredentials
-      .filter((cred: any) => cred && cred.id)
-      .map((cred: any) => ({
-        ...cred,
-        id: challengeToArrayBuffer(cred.id),
-      }));
+      .filter((cred: unknown) => cred && (cred as Record<string, unknown>).id)
+      .map((cred: unknown) => {
+        const credData = cred as Record<string, unknown>;
+        return {
+          ...credData,
+          id: challengeToArrayBuffer(credData.id),
+        };
+      });
   } else {
     delete prepared.allowCredentials;
   }

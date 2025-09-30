@@ -54,18 +54,18 @@ interface IbexReturn {
   clearError: () => void;
 
   // Actions IBEX Safe
-  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>;
+  getUserPrivateData: (externalUserId: string) => Promise<Record<string, unknown>>;
   saveUserPrivateData: (
     externalUserId: string,
-    data: Record<string, any>
+    data: Record<string, unknown>
   ) => Promise<{ success: boolean }>;
-  validateEmail: (email: string, externalUserId: string) => Promise<any>;
+  validateEmail: (email: string, externalUserId: string) => Promise<unknown>;
   confirmEmail: (
     email: string,
     code: string,
     externalUserId: string,
-    options?: any
-  ) => Promise<any>;
+    options?: unknown
+  ) => Promise<unknown>;
 
   // Utilitaires
   getKycStatusLabel: (level: number) => string;
@@ -91,7 +91,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
 
   const isInitialized = useRef(false);
-  const wsCallbacksRef = useRef<any>(null);
+  const wsCallbacksRef = useRef<unknown>(null);
 
   // ========================================================================
   // UTILITAIRES STABLES
@@ -101,7 +101,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
     setError(null);
   }, []);
 
-  const handleError = useCallback((error: any, message: string) => {
+  const handleError = useCallback((error: unknown, message: string) => {
     logger.error('HOOK', message, error);
     setError(error instanceof Error ? error.message : message);
   }, []);
@@ -120,14 +120,15 @@ export function useIbex(config: IbexConfig): IbexReturn {
     });
   }, []);
 
-  const transformUser = useCallback((userData: any): User | null => {
-    if (!userData) return null;
+  const transformUser = useCallback((userData: unknown): User | null => {
+    if (!userData || typeof userData !== 'object') return null;
 
-    const kycLevel = parseInt(userData.ky || '0', 10);
-    const email = kycLevel >= 5 ? userData.email : null;
+    const data = userData as Record<string, unknown>;
+    const kycLevel = parseInt(String(data.ky || '0'), 10);
+    const email = kycLevel >= 5 ? String(data.email || '') : null;
 
     return {
-      id: userData.id,
+      id: String(data.id || ''),
       email,
       kyc: {
         status: kycLevel >= 5 ? 'verified' : 'pending',
@@ -136,81 +137,111 @@ export function useIbex(config: IbexConfig): IbexReturn {
     };
   }, []);
 
-  const transformWallet = useCallback((userData: any): Wallet | null => {
-    if (!userData?.signers?.[0]?.safes?.[0]) return null;
+  const transformWallet = useCallback((userData: unknown): Wallet | null => {
+    if (!userData || typeof userData !== 'object') return null;
 
-    const safe = userData.signers[0].safes[0];
+    const data = userData as Record<string, unknown>;
+    const signers = data.signers as unknown[];
+    if (!signers?.[0] || typeof signers[0] !== 'object') return null;
+
+    const signer = signers[0] as Record<string, unknown>;
+    const safes = signer.safes as unknown[];
+    if (!safes?.[0] || typeof safes[0] !== 'object') return null;
+
+    const safe = safes[0] as Record<string, unknown>;
     return {
-      address: safe.address,
+      address: String(safe.address || ''),
       isConnected: true,
-      chainId: safe.chainId || 421614,
+      chainId: Number(safe.chainId || 421614),
     };
   }, []);
 
   // Convertit les données de transaction en format standard
-  const transformTransaction = useCallback((tx: any): Transaction => {
+  const transformTransaction = useCallback((tx: unknown): Transaction => {
+    if (!tx || typeof tx !== 'object') {
+      throw new Error('Invalid transaction data');
+    }
+
+    const txRecord = tx as Record<string, unknown>;
     // Gère les deux formats : historique (transaction_data) et temps réel (new_transaction)
     let transactionData;
     let isNewTransaction = false;
 
-    if (tx.newTransaction) {
+    if (txRecord.newTransaction) {
       // Format new_transaction : les données sont dans tx.newTransaction
-      transactionData = tx.newTransaction;
+      transactionData = txRecord.newTransaction;
       isNewTransaction = true;
-    } else if (tx.transaction) {
+    } else if (txRecord.transaction) {
       // Format transaction_data : les données sont dans tx.transaction
-      transactionData = tx.transaction;
+      transactionData = txRecord.transaction;
     } else {
       // Format direct
-      transactionData = tx;
+      transactionData = txRecord;
     }
+
+    // Vérifier que transactionData est un objet
+    if (!transactionData || typeof transactionData !== 'object') {
+      throw new Error('Invalid transaction data');
+    }
+
+    const txData = transactionData as Record<string, unknown>;
 
     // Calcul du montant selon le format
     let amount;
     if (isNewTransaction) {
       // Pour new_transaction : la valeur est déjà en EURe (pas de conversion wei)
-      amount = parseFloat(transactionData.value || '0');
+      amount = parseFloat(String(txData.value || '0'));
     } else {
       // Pour transaction_data : convertir wei en EURe (1 EURe = 10^18 wei)
-      const amountInWei = transactionData.value || '0';
-      amount =
-        typeof amountInWei === 'string' ? parseFloat(amountInWei) / Math.pow(10, 18) : amountInWei;
+      const amountInWei = String(txData.value || '0');
+      amount = parseFloat(amountInWei) / Math.pow(10, 18);
     }
 
     // Utilise le hash comme ID unique pour éviter les doublons
-    const id =
-      transactionData.transactionHash || transactionData.hash || String(transactionData.id);
+    const id = String(txData.transactionHash || txData.hash || txData.id || '');
 
     const result = {
       id,
       amount,
-      type: transactionData.direction === 'IN' ? 'IN' : 'OUT',
+      type: String(txData.direction || 'OUT') === 'IN' ? 'IN' : 'OUT',
       status: 'confirmed' as const,
-      date: transactionData.timestamp,
-      hash: transactionData.transactionHash || transactionData.hash,
-      from: transactionData.from,
-      to: transactionData.to,
+      date: String(txData.timestamp || ''),
+      hash: String(txData.transactionHash || txData.hash || ''),
+      from: String(txData.from || ''),
+      to: String(txData.to || ''),
     };
 
     return result as Transaction;
   }, []);
 
-  const transformOperation = useCallback((op: any): Operation => {
-    // Les opérations utilisent déjà le bon format (pas de conversion wei)
-    const amount = parseFloat(op.data?.params?.amount || '0');
+  const transformOperation = useCallback((op: unknown): Operation => {
+    if (!op || typeof op !== 'object') {
+      throw new Error('Invalid operation data');
+    }
+
+    const opData = op as Record<string, unknown>;
+    const data = opData.data as Record<string, unknown> | undefined;
+    const params = data?.params as Record<string, unknown> | undefined;
+    const amount = parseFloat(String(params?.amount || '0'));
 
     return {
-      id: op.id,
-      type: op.type as any,
-      status: op.safeOperation?.status || op.status || 'unknown',
-      amount: amount,
-      createdAt: op.createdAt,
-      ...(op.safeOperation && {
-        safeOperation: {
-          userOpHash: op.safeOperation.userOpHash,
-          status: op.safeOperation.status,
-        },
-      }),
+      id: String(opData.id || ''),
+      type: String(opData.type || '') as Operation['type'],
+      status: String(
+        (opData.safeOperation as Record<string, unknown>)?.status || opData.status || 'unknown'
+      ) as Operation['status'],
+      amount,
+      createdAt: String(opData.createdAt || ''),
+      ...(opData.safeOperation && typeof opData.safeOperation === 'object'
+        ? {
+            safeOperation: {
+              userOpHash: String(
+                (opData.safeOperation as Record<string, unknown>).userOpHash || ''
+              ),
+              status: String((opData.safeOperation as Record<string, unknown>).status || ''),
+            },
+          }
+        : {}),
     };
   }, []);
 
@@ -219,7 +250,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   // ========================================================================
 
   // Debounce pour éviter les appels multiples
-  const refreshOperationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshOperationsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRefreshingOperationsRef = useRef<boolean>(false);
 
   const refreshOperations = useCallback(async () => {
@@ -242,10 +273,13 @@ export function useIbex(config: IbexConfig): IbexReturn {
         if (!token) return;
 
         const opData = await client.getUserOperations();
-        const operations = (opData?.data || [])
-          .filter((op: any) => {
+        const operations = (opData?.operations || [])
+          .filter((op: unknown) => {
             // Filtre seulement les opérations exécutées
-            const safeStatus = op.safeOperation?.status;
+            if (!op || typeof op !== 'object') return false;
+            const opData = op as Record<string, unknown>;
+            const safeOperation = opData.safeOperation as Record<string, unknown> | undefined;
+            const safeStatus = safeOperation?.status;
             return safeStatus === 'EXECUTED';
           })
           .map(transformOperation);
@@ -273,16 +307,18 @@ export function useIbex(config: IbexConfig): IbexReturn {
     if (wsCallbacksRef.current) return wsCallbacksRef.current;
 
     const callbacks = {
-      onAuthSuccess: (data: any) => {
+      onAuthSuccess: (data: unknown) => {
         logger.success('WebSocket', 'Authentifié avec succès', data);
       },
 
       // Met à jour le solde quand reçu via WebSocket
-      onBalanceUpdate: (data: any) => {
+      onBalanceUpdate: (data: unknown) => {
+        if (!data || typeof data !== 'object') return;
+        const balanceData = data as Record<string, unknown>;
         setData(prev => ({
           ...prev,
           balance: {
-            amount: parseFloat(data.balance) || 0,
+            amount: parseFloat(String(balanceData.balance || '0')) || 0,
             symbol: 'EURe',
             usdValue: 0,
           },
@@ -294,7 +330,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
       },
 
       // Ajoute une nouvelle transaction à la liste (évite les doublons)
-      onNewTransaction: (data: any) => {
+      onNewTransaction: (data: unknown) => {
         const transaction = transformTransaction(data);
 
         setData(prev => {
@@ -317,7 +353,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
         refreshOperations();
       },
 
-      onUserData: (userData: any) => {
+      onUserData: (userData: unknown) => {
         setData(prev => ({
           ...prev,
           user: transformUser(userData),
@@ -325,8 +361,10 @@ export function useIbex(config: IbexConfig): IbexReturn {
         }));
       },
 
-      onIbanUpdate: (ibanData: any) => {
-        logger.info('IBAN', 'Statut IBAN mis à jour', ibanData);
+      onIbanUpdate: (ibanData: unknown) => {
+        if (!ibanData || typeof ibanData !== 'object') return;
+        const iban = ibanData as Record<string, unknown>;
+        logger.info('IBAN', 'Statut IBAN mis à jour', iban);
         setData(prev => ({
           ...prev,
           user: prev.user
@@ -334,16 +372,18 @@ export function useIbex(config: IbexConfig): IbexReturn {
                 ...prev.user,
                 iban: {
                   ...prev.user.iban,
-                  status: ibanData.newState,
-                  updatedAt: ibanData.updatedAt,
+                  status: String(iban.newState || '') as 'pending' | 'verified' | 'rejected',
+                  updatedAt: String(iban.updatedAt || ''),
                 },
               }
             : prev.user,
         }));
       },
 
-      onKycUpdate: (kycData: any) => {
-        logger.info('KYC', 'Statut KYC mis à jour', kycData);
+      onKycUpdate: (kycData: unknown) => {
+        if (!kycData || typeof kycData !== 'object') return;
+        const kyc = kycData as Record<string, unknown>;
+        logger.info('KYC', 'Statut KYC mis à jour', kyc);
         setData(prev => ({
           ...prev,
           user: prev.user
@@ -351,8 +391,11 @@ export function useIbex(config: IbexConfig): IbexReturn {
                 ...prev.user,
                 kyc: {
                   ...prev.user.kyc,
-                  status: kycData.newKyc.toLowerCase() as 'pending' | 'verified' | 'rejected',
-                  updatedAt: kycData.updatedAt,
+                  status: String(kyc.newKyc || '').toLowerCase() as
+                    | 'pending'
+                    | 'verified'
+                    | 'rejected',
+                  updatedAt: String(kyc.updatedAt || ''),
                 },
               }
             : prev.user,
@@ -360,7 +403,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
       },
 
       // Met à jour les opérations en temps réel
-      onOperationUpdate: (operationData: any) => {
+      onOperationUpdate: (operationData: unknown) => {
         logger.info('OPERATION', 'Opération mise à jour', operationData);
         const operation = transformOperation(operationData);
 
@@ -412,7 +455,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   const initializeWebSocket = useCallback(
     async (jwtToken: string) => {
       const wsConfig: WebSocketConfig = {
-        apiUrl: config.baseURL.replace('http', 'ws') + '/ws',
+        apiUrl: `${config.baseURL.replace('http', 'ws')}/ws`,
         jwtToken,
         clientName: 'IBEX SDK',
       };
@@ -447,10 +490,13 @@ export function useIbex(config: IbexConfig): IbexReturn {
       // Charge les opérations depuis l'API
       try {
         const opData = await client.getUserOperations();
-        const operations = (opData?.data || [])
-          .filter((op: any) => {
+        const operations = (opData?.operations || [])
+          .filter((op: unknown) => {
             // Filtre seulement les opérations exécutées
-            const safeStatus = op.safeOperation?.status;
+            if (!op || typeof op !== 'object') return false;
+            const opData = op as Record<string, unknown>;
+            const safeOperation = opData.safeOperation as Record<string, unknown> | undefined;
+            const safeStatus = safeOperation?.status;
             return safeStatus === 'EXECUTED';
           })
           .map(transformOperation);
@@ -610,7 +656,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   // ========================================================================
 
   const getUserPrivateData = useCallback(
-    async (externalUserId: string): Promise<Record<string, any>> => {
+    async (externalUserId: string): Promise<Record<string, unknown>> => {
       try {
         return await client.getUserPrivateData(externalUserId);
       } catch (error) {
@@ -622,7 +668,10 @@ export function useIbex(config: IbexConfig): IbexReturn {
   );
 
   const saveUserPrivateData = useCallback(
-    async (externalUserId: string, data: Record<string, any>): Promise<{ success: boolean }> => {
+    async (
+      externalUserId: string,
+      data: Record<string, unknown>
+    ): Promise<{ success: boolean }> => {
       try {
         return await client.saveUserPrivateData(externalUserId, data);
       } catch (error) {
@@ -634,7 +683,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   );
 
   const validateEmail = useCallback(
-    async (email: string, externalUserId: string): Promise<any> => {
+    async (email: string, externalUserId: string): Promise<unknown> => {
       try {
         return await client.validateEmail(email, externalUserId);
       } catch (error) {
@@ -650,8 +699,8 @@ export function useIbex(config: IbexConfig): IbexReturn {
       email: string,
       code: string,
       externalUserId: string,
-      options: any = {}
-    ): Promise<any> => {
+      options: unknown = {}
+    ): Promise<unknown> => {
       try {
         return await client.confirmEmail(email, code, externalUserId, options);
       } catch (error) {

@@ -16,7 +16,16 @@ import { TransactionService } from '../services/TransactionService';
 import { KycService } from '../services/KycService';
 import { IbexSafeService } from '../services/IbexSafeService';
 import { CacheManager } from './CacheManager';
-import type { IbexConfig, AuthResponse, UserDetails } from '../types';
+import type {
+  IbexConfig,
+  AuthResponse,
+  UserDetails,
+  WalletAddressesResponse,
+  SupportedChainIdsResponse,
+  UserOperationsResponse,
+  BalanceResponse,
+  TransactionsResponse,
+} from '../types';
 
 /**
  * Client IBEX principal - API unifiée et simplifiée
@@ -88,21 +97,21 @@ export class IbexClient {
   /**
    * Récupérer les adresses du portefeuille
    */
-  async getWalletAddresses(): Promise<any> {
+  async getWalletAddresses(): Promise<WalletAddressesResponse> {
     return this.wallet.getAddresses();
   }
 
   /**
    * Récupérer les chain IDs supportés
    */
-  async getSupportedChainIds(): Promise<any> {
+  async getSupportedChainIds(): Promise<SupportedChainIdsResponse> {
     return this.wallet.getChainIds();
   }
 
   /**
    * Récupérer les opérations utilisateur
    */
-  async getUserOperations(): Promise<any> {
+  async getUserOperations(): Promise<UserOperationsResponse> {
     return this.wallet.getOperations();
   }
 
@@ -113,14 +122,14 @@ export class IbexClient {
   /**
    * Récupérer les balances
    */
-  async getBalances(address?: string): Promise<any> {
+  async getBalances(address?: string): Promise<BalanceResponse> {
     return this.transactions.getBalances(address);
   }
 
   /**
    * Récupérer les transactions
    */
-  async getTransactions(options: any = {}): Promise<any> {
+  async getTransactions(options: Record<string, unknown> = {}): Promise<TransactionsResponse> {
     return this.transactions.getTransactions(options);
   }
 
@@ -134,8 +143,8 @@ export class IbexClient {
   async executeSafeOperation(
     safeAddress: string,
     chainId: number,
-    operations: any[]
-  ): Promise<any> {
+    operations: unknown[]
+  ): Promise<unknown> {
     return this.wallet.executeSafeOperation(safeAddress, chainId, operations);
   }
 
@@ -147,14 +156,14 @@ export class IbexClient {
     chainId: number,
     to: string,
     amount: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     return this.wallet.transferEURe(safeAddress, chainId, to, amount);
   }
 
   /**
    * Créer un IBAN
    */
-  async createIban(safeAddress: string, chainId: number): Promise<any> {
+  async createIban(safeAddress: string, chainId: number): Promise<unknown> {
     return this.wallet.createIban(safeAddress, chainId);
   }
 
@@ -167,8 +176,8 @@ export class IbexClient {
     amount: string,
     iban: string,
     label?: string,
-    recipientInfo?: any
-  ): Promise<any> {
+    recipientInfo?: unknown
+  ): Promise<unknown> {
     return this.wallet.withdrawToIban(safeAddress, chainId, amount, iban, label, recipientInfo);
   }
 
@@ -179,7 +188,7 @@ export class IbexClient {
   /**
    * Créer un iframe KYC
    */
-  async createKycIframe(language: string = 'fr'): Promise<any> {
+  async createKycIframe(language: string = 'fr'): Promise<unknown> {
     return this.kyc.createIframe(language);
   }
 
@@ -197,7 +206,7 @@ export class IbexClient {
   /**
    * Récupérer les données utilisateur privées
    */
-  async getUserPrivateData(externalUserId: string): Promise<Record<string, any>> {
+  async getUserPrivateData(externalUserId: string): Promise<Record<string, unknown>> {
     return this.ibexSafe.getUserData(externalUserId);
   }
 
@@ -206,7 +215,7 @@ export class IbexClient {
    */
   async saveUserPrivateData(
     externalUserId: string,
-    data: Record<string, any>
+    data: Record<string, unknown>
   ): Promise<{ success: boolean }> {
     return this.ibexSafe.saveUserData(externalUserId, data);
   }
@@ -214,7 +223,7 @@ export class IbexClient {
   /**
    * Valider un email
    */
-  async validateEmail(email: string, externalUserId: string): Promise<any> {
+  async validateEmail(email: string, externalUserId: string): Promise<unknown> {
     return this.ibexSafe.validateEmail(email, externalUserId);
   }
 
@@ -225,9 +234,16 @@ export class IbexClient {
     email: string,
     code: string,
     externalUserId: string,
-    options?: any
-  ): Promise<any> {
-    return this.ibexSafe.confirmEmail(email, code, externalUserId, options);
+    options?: unknown
+  ): Promise<unknown> {
+    return this.ibexSafe.confirmEmail(
+      email,
+      code,
+      externalUserId,
+      options as
+        | { userDataName?: string; optinNews?: boolean; optinNotifications?: boolean }
+        | undefined
+    );
   }
 
   // ========================================================================
@@ -237,7 +253,7 @@ export class IbexClient {
   /**
    * Récupérer le statut de récupération
    */
-  async getRecoveryStatus(safeAddress: string): Promise<any> {
+  async getRecoveryStatus(safeAddress: string): Promise<unknown> {
     return this.wallet.getRecoveryStatus(safeAddress);
   }
 
@@ -263,7 +279,7 @@ export class IbexClient {
   /**
    * Vérifier la santé de l'API
    */
-  async getHealth(): Promise<any> {
+  async getHealth(): Promise<unknown> {
     return this.apiClient.request('/health');
   }
 }
