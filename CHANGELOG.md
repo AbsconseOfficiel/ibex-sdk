@@ -5,6 +5,40 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-09-30
+
+### Added
+
+- **Architecture hybride optimisée** : API REST (données initiales) + WebSocket (temps réel)
+- **WebSocket temps réel** : Mises à jour automatiques des soldes, transactions et opérations
+- **Optimisation des requêtes** : Réduction de 90% des appels API (1 seule requête pour les opérations initiales)
+- **Messages WebSocket conformes** : Implémentation complète selon la documentation IBEX officielle
+- **Fonctions utilitaires** : `getKycStatusLabel`, `getOperationTypeLabel`, `getOperationStatusLabel`
+- **Gestion d'état WebSocket** : `isWebSocketConnected` pour surveiller la connexion
+- **Callbacks WebSocket** : `onTransactionData`, `onOperationData` pour les données initiales
+
+### Changed
+
+- **Architecture simplifiée** : Suppression des services redondants (`AuthService`, `WalletService`, etc.)
+- **Consolidation dans `IbexClient`** : Toute la logique centralisée dans un seul client
+- **WebSocket comme source principale** : Mises à jour temps réel pour solde, transactions, opérations
+- **Optimisation des performances** : Suppression du polling inutile
+- **Documentation mise à jour** : Tous les guides reflètent la nouvelle architecture
+
+### Fixed
+
+- **Erreurs WebAuthn** : Correction du format des challenges (ArrayBuffer)
+- **Historique des opérations** : Affichage correct des opérations via API REST initial
+- **Filtrage des opérations** : Support des statuts `EXECUTED` et `executed`
+- **Gestion des erreurs** : Amélioration de la robustesse des callbacks WebSocket
+
+### Performance
+
+- **Réduction drastique des requêtes API** : De ~10 requêtes à 1 seule requête au démarrage
+- **Mises à jour temps réel** : WebSocket pour toutes les mises à jour automatiques
+- **Cache optimisé** : Invalidation intelligente basée sur les messages WebSocket
+- **Bundle size réduit** : Suppression du code redondant
+
 ## [1.0.0] - 2025-09-29
 
 ### Added

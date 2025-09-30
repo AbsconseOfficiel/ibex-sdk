@@ -9,6 +9,8 @@
  * Conformes au Swagger IBEX
  */
 
+// Types WebAuthn - utilisation des types DOM existants
+
 // ============================================================================
 // TYPES DE BASE SIMPLIFIÉS
 // ============================================================================
@@ -86,6 +88,68 @@ export interface Balance {
   usdValue?: number;
 }
 
+/**
+ * Réponse des adresses de portefeuille
+ */
+export interface WalletAddressesResponse {
+  addresses: string[];
+  defaultAddress: string;
+}
+
+/**
+ * Réponse des chain IDs supportés
+ */
+export interface SupportedChainIdsResponse {
+  chainIds: number[];
+  defaultChainId: number;
+}
+
+/**
+ * Réponse des opérations utilisateur
+ */
+export interface UserOperationsResponse {
+  operations: Operation[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+/**
+ * Réponse des transactions
+ */
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+/**
+ * Réponse des détails utilisateur
+ */
+export interface UserDetailsResponse {
+  user: User;
+}
+
+/**
+ * Réponse des détails de transaction
+ */
+export interface TransactionDetailsResponse {
+  transaction: Transaction;
+}
+
+/**
+ * Réponse des détails d'opération
+ */
+export interface OperationDetailsResponse {
+  operation: Operation;
+  usdValue?: number;
+}
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
@@ -149,7 +213,7 @@ export interface UserDetails {
  */
 export interface BalanceResponse {
   balance: string;
-  tokens?: any[];
+  tokens?: unknown[];
   totalValueUsd?: number;
   lastUpdated?: string;
 }
@@ -158,8 +222,8 @@ export interface BalanceResponse {
  * Réponse des transactions
  */
 export interface TransactionResponse {
-  data: any[];
-  pagination?: any;
+  data: unknown[];
+  pagination?: unknown;
 }
 
 // ============================================================================
@@ -172,12 +236,16 @@ export interface TransactionResponse {
 export interface WebAuthnOptions {
   challenge: ArrayBuffer;
   rpId: string;
-  allowCredentials?: PublicKeyCredentialDescriptor[];
-  userVerification?: UserVerificationRequirement;
+  allowCredentials?: Array<{
+    type: 'public-key';
+    id: ArrayBuffer;
+    transports?: string[];
+  }>;
+  userVerification?: 'required' | 'preferred' | 'discouraged';
   timeout?: number;
   hints?: string[];
-  attestation?: AttestationConveyancePreference;
-  extensions?: any;
+  attestation?: 'none' | 'indirect' | 'direct';
+  extensions?: unknown;
   rp?: {
     id: string;
     name: string;
@@ -192,9 +260,9 @@ export interface WebAuthnOptions {
     alg: number;
   }>;
   authenticatorSelection?: {
-    authenticatorAttachment?: AuthenticatorAttachment;
-    userVerification?: UserVerificationRequirement;
-    residentKey?: ResidentKeyRequirement;
+    authenticatorAttachment?: 'platform' | 'cross-platform';
+    userVerification?: 'required' | 'preferred' | 'discouraged';
+    residentKey?: 'discouraged' | 'preferred' | 'required';
   };
 }
 
@@ -288,7 +356,7 @@ export interface KycStatusInfo {
  * Données utilisateur privées
  */
 export interface UserPrivateData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -308,14 +376,14 @@ export interface SaveUserDataResponse {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp?: string;
 }
 
 /**
  * Réponse API générique
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   success: boolean;
@@ -353,14 +421,14 @@ export interface BalanceOptions {
 /**
  * @deprecated Utilisez User à la place
  */
-export interface UserDetails extends User {}
+export interface UserDetailsLegacy extends User {}
 
 /**
  * @deprecated Utilisez Transaction[] à la place
  */
-export interface TransactionResponse {
-  data: any[];
-  pagination?: any;
+export interface TransactionResponseLegacy {
+  data: unknown[];
+  pagination?: unknown;
 }
 
 /**
@@ -371,5 +439,5 @@ export interface SafeOperation {
   type: string;
   status: string;
   createdAt: string;
-  data?: any;
+  data?: unknown;
 }

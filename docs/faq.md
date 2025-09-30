@@ -6,11 +6,55 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
-[Authentification](#authentification) • [Données](#données) • [Transactions](#transactions) • [Support](#support)
+[Architecture](#architecture) • [Authentification](#authentification) • [Données](#données) • [Transactions](#transactions) • [Support](#support)
 
 </div>
+
+---
+
+## Architecture
+
+### Q: Pourquoi l'historique des opérations est vide ?
+
+**R:** L'architecture hybride charge les opérations via API REST au démarrage, puis les mises à jour via WebSocket.
+
+**Vérifications :**
+
+1. **Connexion WebSocket** : Vérifiez `isWebSocketConnected`
+2. **Chargement initial** : Les opérations sont chargées une seule fois au démarrage
+3. **Filtrage** : Seules les opérations `EXECUTED` sont affichées
+4. **Logs** : Regardez la console pour "Opérations initiales chargées"
+
+### Q: Pourquoi je vois encore des requêtes API après l'optimisation ?
+
+**R:** C'est normal ! L'architecture optimisée utilise :
+
+- **1 requête API** : `getUserOperations()` pour les opérations initiales
+- **WebSocket** : Pour toutes les mises à jour temps réel
+
+**Ce qui a été supprimé :**
+
+- ❌ `getTransactions()` (remplacé par WebSocket `transaction_data`)
+- ❌ Polling des opérations (remplacé par WebSocket `operation_update`)
+
+### Q: Comment fonctionne l'architecture hybride ?
+
+**R:** L'architecture optimisée suit ce flux :
+
+```
+1. Connexion → API REST (opérations initiales)
+2. WebSocket → Données temps réel (solde, transactions, mises à jour)
+3. Interface → Mises à jour automatiques
+```
+
+**Avantages :**
+
+- ✅ Minimum de requêtes API
+- ✅ Mises à jour temps réel
+- ✅ Performance optimisée
+- ✅ Conforme à la documentation IBEX
 
 ---
 

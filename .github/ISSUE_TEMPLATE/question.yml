@@ -1,0 +1,135 @@
+name: ❓ Question
+description: Poser une question sur l'utilisation du SDK
+title: '[QUESTION] '
+labels: ['question', 'needs-triage']
+assignees: ['AbsconseOfficiel']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de poser votre question !
+
+        **Avant de créer cette issue, vérifiez :**
+        - [ ] La question n'a pas déjà été posée
+        - [ ] Vous avez consulté la [documentation](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs)
+        - [ ] Vous avez cherché dans les [discussions](https://github.com/AbsconseOfficiel/ibex-sdk/discussions)
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Votre question
+      description: Posez votre question de manière claire et précise
+      placeholder: 'Comment utiliser le WebSocket pour recevoir les mises à jour en temps réel ?'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Catégorie
+      description: Dans quelle catégorie votre question s'inscrit-elle ?
+      options:
+        - '🔐 Authentification'
+        - '💰 Transactions'
+        - '🏦 Portefeuille'
+        - '📊 Données'
+        - '🌐 WebSocket'
+        - '🛠️ API'
+        - '📱 Interface'
+        - '🔧 Configuration'
+        - '🐛 Problème technique'
+        - '📚 Documentation'
+        - 'Autre'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: level
+    attributes:
+      label: Niveau de complexité
+      description: Quel est le niveau de votre question ?
+      options:
+        - '🟢 Débutant - Première utilisation'
+        - '🟡 Intermédiaire - Utilisation avancée'
+        - '🔴 Expert - Implémentation complexe'
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte
+      description: Décrivez votre contexte d'utilisation
+      placeholder: 'Je développe une application React qui doit gérer les transactions IBEX...'
+
+  - type: textarea
+    id: what-tried
+    attributes:
+      label: Ce que vous avez essayé
+      description: Qu'avez-vous déjà tenté pour résoudre votre question ?
+      placeholder: |
+        - J'ai lu la documentation sur les WebSockets
+        - J'ai essayé d'utiliser useIbex() mais je ne comprends pas...
+        - J'ai regardé les exemples mais ils ne correspondent pas à mon cas
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code concerné
+      description: Partagez le code pertinent (sans données sensibles)
+      placeholder: |
+        ```typescript
+        const { isWebSocketConnected, balance } = useIbex(config);
+
+        // Je ne comprends pas pourquoi isWebSocketConnected est false
+        ```
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Résultat attendu
+      description: Que souhaitez-vous obtenir ?
+      placeholder: 'Je voudrais que le WebSocket se connecte automatiquement et que le solde se mette à jour...'
+
+  - type: input
+    id: version
+    attributes:
+      label: Version du SDK
+      description: Quelle version utilisez-vous ?
+      placeholder: '1.1.1'
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environnement
+      description: Dans quel environnement ?
+      placeholder: 'React 18, TypeScript, Chrome 118'
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications
+      description: Cochez les éléments qui s'appliquent
+      options:
+        - label: "J'ai consulté la documentation"
+          required: true
+        - label: "J'ai cherché dans les discussions existantes"
+          required: true
+        - label: 'Ma question est claire et précise'
+          required: true
+        - label: "J'ai fourni le contexte nécessaire"
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Aide supplémentaire
+
+        **Ressources utiles :**
+        - [Documentation complète](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs)
+        - [Exemples pratiques](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs/examples.md)
+        - [FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs/faq.md)
+        - [Discussions GitHub](https://github.com/AbsconseOfficiel/ibex-sdk/discussions)
+
+        **Merci de votre question !**

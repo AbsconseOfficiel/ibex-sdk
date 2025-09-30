@@ -29,11 +29,12 @@ npm install @absconse/ibex-sdk
 
 ### Ce que fait le SDK
 
-- **Authentification** : WebAuthn/Passkeys
-- **Portefeuille** : Gestion des wallets Safe
-- **Transactions** : Envoi, réception, historique
-- **KYC** : Vérification d'identité
-- **Données** : Solde, opérations, utilisateur
+- **Authentification** : WebAuthn/Passkeys avec WebSocket temps réel
+- **Portefeuille** : Gestion des wallets Safe avec mises à jour automatiques
+- **Transactions** : Envoi, réception, historique temps réel
+- **KYC** : Vérification d'identité avec notifications
+- **Données** : Solde, opérations, utilisateur synchronisés
+- **Architecture** : API REST (initial) + WebSocket (temps réel)
 
 </td>
 <td width="50%">

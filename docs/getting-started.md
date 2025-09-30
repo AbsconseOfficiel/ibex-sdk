@@ -6,7 +6,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
-[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/ibex/sdk)
+[![Status](https://img.shields.io/badge/Status-Stable-green)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
 [Prérequis](#prérequis) • [Installation](#installation) • [Configuration de base](#configuration-de-base) • [Premier test](#premier-test)
 
@@ -25,9 +25,10 @@
 ### Objectifs d'apprentissage
 
 - ✅ Installer et configurer l'IBEX SDK
+- ✅ Comprendre l'architecture hybride (API REST + WebSocket)
 - ✅ Créer votre première application avec authentification
-- ✅ Gérer les transactions et les soldes
-- ✅ Comprendre les concepts fondamentaux
+- ✅ Gérer les transactions et les soldes en temps réel
+- ✅ Utiliser les mises à jour automatiques via WebSocket
 
 </td>
 <td width="50%">
@@ -72,6 +73,36 @@
 </td>
 </tr>
 </table>
+
+---
+
+## Architecture du SDK
+
+### Comprendre le flux de données
+
+L'IBEX SDK utilise une **architecture hybride optimisée** :
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API REST      │    │   WebSocket     │    │   Interface     │
+│   (Initial)     │    │   (Temps Réel)  │    │   Utilisateur   │
+│                 │    │                 │    │                 │
+│ • Operations    │───▶│ • Balance       │───▶│ • Solde         │
+│   (1x au start) │    │ • Transactions  │    │ • Historique    │
+│                 │    │ • Opérations    │    │ • Opérations    │
+│                 │    │ • Utilisateur   │    │ • Mises à jour  │
+│                 │    │ • Mises à jour  │    │   temps réel    │
+│                 │    │   automatiques  │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Avantages de cette architecture
+
+- ✅ **Données initiales** : API REST (1 seule requête pour les opérations)
+- ✅ **Temps réel** : WebSocket pour toutes les mises à jour
+- ✅ **Efficacité** : Minimum de requêtes API
+- ✅ **Performance** : Mises à jour instantanées
+- ✅ **Conformité** : Suit la documentation IBEX officielle
 
 ---
 

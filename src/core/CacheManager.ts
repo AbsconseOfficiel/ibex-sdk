@@ -23,7 +23,7 @@ interface CacheEntry<T> {
  * Gestionnaire de cache avec TTL et invalidation par tags
  */
 export class CacheManager {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private tagIndex = new Map<string, Set<string>>();
 
   // ========================================================================
@@ -46,7 +46,7 @@ export class CacheManager {
       if (!this.tagIndex.has(tag)) {
         this.tagIndex.set(tag, new Set());
       }
-      this.tagIndex.get(tag)!.add(key);
+      this.tagIndex.get(tag)?.add(key);
     });
   }
 
@@ -63,7 +63,7 @@ export class CacheManager {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
   /**

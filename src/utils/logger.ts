@@ -75,7 +75,12 @@ class IbexLogger {
   /**
    * Formate un message avec timestamp et couleurs
    */
-  private formatMessage(level: LogLevel, category: string, message: string, data?: any): string {
+  private formatMessage(
+    level: LogLevel,
+    category: string,
+    message: string,
+    data?: unknown
+  ): string {
     const timestamp = this.config.enableTimestamps
       ? `${this.colors.dim}[${new Date().toISOString()}]${this.colors.reset} `
       : '';
@@ -127,7 +132,7 @@ class IbexLogger {
    */
   private formatMessageText(message: string): string {
     if (message.length > this.config.maxMessageLength) {
-      message = message.substring(0, this.config.maxMessageLength) + '...';
+      message = `${message.substring(0, this.config.maxMessageLength)}...`;
     }
     return message;
   }
@@ -135,7 +140,7 @@ class IbexLogger {
   /**
    * Formate les données supplémentaires
    */
-  private formatData(data: any): string {
+  private formatData(data: unknown): string {
     try {
       const formatted = JSON.stringify(data, null, 2);
       const color = this.config.enableColors ? this.colors.dim : '';
@@ -149,8 +154,9 @@ class IbexLogger {
   /**
    * Log un message de debug
    */
-  debug(category: string, message: string, data?: any): void {
+  debug(category: string, message: string, data?: unknown): void {
     if (this.config.level <= LogLevel.DEBUG) {
+      // eslint-disable-next-line no-console
       console.log(this.formatMessage(LogLevel.DEBUG, category, message, data));
     }
   }
@@ -158,8 +164,9 @@ class IbexLogger {
   /**
    * Log un message d'information
    */
-  info(category: string, message: string, data?: any): void {
+  info(category: string, message: string, data?: unknown): void {
     if (this.config.level <= LogLevel.INFO) {
+      // eslint-disable-next-line no-console
       console.info(this.formatMessage(LogLevel.INFO, category, message, data));
     }
   }
@@ -167,8 +174,9 @@ class IbexLogger {
   /**
    * Log un avertissement
    */
-  warn(category: string, message: string, data?: any): void {
+  warn(category: string, message: string, data?: unknown): void {
     if (this.config.level <= LogLevel.WARN) {
+      // eslint-disable-next-line no-console
       console.warn(this.formatMessage(LogLevel.WARN, category, message, data));
     }
   }
@@ -176,13 +184,15 @@ class IbexLogger {
   /**
    * Log une erreur
    */
-  error(category: string, message: string, error?: any): void {
+  error(category: string, message: string, error?: unknown): void {
     if (this.config.level <= LogLevel.ERROR) {
+      // eslint-disable-next-line no-console
       console.error(this.formatMessage(LogLevel.ERROR, category, message, error));
 
       if (this.config.enableStackTraces && error instanceof Error && error.stack) {
         const stackColor = this.config.enableColors ? this.colors.dim : '';
         const reset = this.config.enableColors ? this.colors.reset : '';
+        // eslint-disable-next-line no-console
         console.error(`${stackColor}${error.stack}${reset}`);
       }
     }
@@ -191,7 +201,7 @@ class IbexLogger {
   /**
    * Log de succès (alias pour info avec icône de succès)
    */
-  success(category: string, message: string, data?: any): void {
+  success(category: string, message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.green : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.success;
@@ -202,7 +212,7 @@ class IbexLogger {
   /**
    * Log d'authentification
    */
-  auth(message: string, data?: any): void {
+  auth(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.magenta : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.auth;
@@ -213,7 +223,7 @@ class IbexLogger {
   /**
    * Log d'API
    */
-  api(message: string, data?: any): void {
+  api(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.cyan : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.api;
@@ -224,7 +234,7 @@ class IbexLogger {
   /**
    * Log de portefeuille
    */
-  wallet(message: string, data?: any): void {
+  wallet(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.yellow : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.wallet;
@@ -235,7 +245,7 @@ class IbexLogger {
   /**
    * Log de transaction
    */
-  transaction(message: string, data?: any): void {
+  transaction(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.green : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.transaction;
@@ -246,7 +256,7 @@ class IbexLogger {
   /**
    * Log de KYC
    */
-  kyc(message: string, data?: any): void {
+  kyc(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.blue : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.kyc;
@@ -257,7 +267,7 @@ class IbexLogger {
   /**
    * Log de chargement
    */
-  loading(message: string, data?: any): void {
+  loading(message: string, data?: unknown): void {
     const color = this.config.enableColors ? this.colors.dim : '';
     const reset = this.config.enableColors ? this.colors.reset : '';
     const icon = this.icons.loading;
@@ -272,6 +282,7 @@ class IbexLogger {
     if (this.config.level <= LogLevel.DEBUG) {
       const color = this.config.enableColors ? this.colors.bright + this.colors.blue : '';
       const reset = this.config.enableColors ? this.colors.reset : '';
+      // eslint-disable-next-line no-console
       console.group(`${color}${title}${reset}`);
     }
   }
@@ -281,6 +292,7 @@ class IbexLogger {
    */
   groupEnd(): void {
     if (this.config.level <= LogLevel.DEBUG) {
+      // eslint-disable-next-line no-console
       console.groupEnd();
     }
   }
@@ -288,16 +300,16 @@ class IbexLogger {
   /**
    * Trace le début d'une opération
    */
-  traceStart(operation: string, data?: any): void {
+  traceStart(operation: string, data?: unknown): void {
     this.loading(`Début: ${operation}`, data);
   }
 
   /**
    * Trace la fin d'une opération
    */
-  traceEnd(operation: string, success: boolean = true, data?: any): void {
+  traceEnd(operation: string, success: boolean = true, data?: unknown): void {
     if (success) {
-      this.success(`Terminé: ${operation}`, data);
+      this.success(`Terminé: ${operation}`, data as string);
     } else {
       this.error('OPERATION', `Échec: ${operation}`, data);
     }

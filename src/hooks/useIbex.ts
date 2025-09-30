@@ -12,8 +12,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { IbexClient } from '../core/IbexClient';
-import { WebSocketManager } from '../services/WebSocketManager';
-import { WebSocketConfig } from '../services/WebSocketService';
+import { WebSocketService, WebSocketConfig } from '../services/WebSocketService';
 import { logger } from '../utils/logger';
 import type { IbexConfig, User, Wallet, Operation, Balance, Transaction } from '../types';
 
@@ -42,30 +41,15 @@ interface IbexReturn {
   error: string | null;
   isWebSocketConnected: boolean;
 
-  // Actions
+  // Actions principales
   signIn: () => Promise<void>;
   signUp: (passkeyName?: string) => Promise<void>;
   logout: () => Promise<void>;
   send: (amount: number, to: string) => Promise<void>;
   receive: () => Promise<string>;
-  withdraw: (amount: number, iban: string) => Promise<void>;
   startKyc: (language?: string) => Promise<string>;
   refresh: () => Promise<void>;
   clearError: () => void;
-
-  // Actions IBEX Safe
-  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>;
-  saveUserPrivateData: (
-    externalUserId: string,
-    data: Record<string, any>
-  ) => Promise<{ success: boolean }>;
-  validateEmail: (email: string, externalUserId: string) => Promise<any>;
-  confirmEmail: (
-    email: string,
-    code: string,
-    externalUserId: string,
-    options?: any
-  ) => Promise<any>;
 
   // Utilitaires
   getKycStatusLabel: (level: number) => string;
@@ -91,7 +75,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
   const [isWebSocketConnected, setIsWebSocketConnected] = useState(false);
 
   const isInitialized = useRef(false);
-  const wsCallbacksRef = useRef<any>(null);
+  const wsCallbacksRef = useRef<unknown>(null);
 
   // ========================================================================
   // UTILITAIRES STABLES
@@ -101,7 +85,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
     setError(null);
   }, []);
 
-  const handleError = useCallback((error: any, message: string) => {
+  const handleError = useCallback((error: unknown, message: string) => {
     logger.error('HOOK', message, error);
     setError(error instanceof Error ? error.message : message);
   }, []);
@@ -120,14 +104,15 @@ export function useIbex(config: IbexConfig): IbexReturn {
     });
   }, []);
 
-  const transformUser = useCallback((userData: any): User | null => {
-    if (!userData) return null;
+  const transformUser = useCallback((userData: unknown): User | null => {
+    if (!userData || typeof userData !== 'object') return null;
 
-    const kycLevel = parseInt(userData.ky || '0', 10);
-    const email = kycLevel >= 5 ? userData.email : null;
+    const data = userData as Record<string, unknown>;
+    const kycLevel = parseInt(String(data.ky || '0'), 10);
+    const email = kycLevel >= 5 ? String(data.email || '') : null;
 
     return {
-      id: userData.id,
+      id: String(data.id || ''),
       email,
       kyc: {
         status: kycLevel >= 5 ? 'verified' : 'pending',
@@ -136,133 +121,113 @@ export function useIbex(config: IbexConfig): IbexReturn {
     };
   }, []);
 
-  const transformWallet = useCallback((userData: any): Wallet | null => {
-    if (!userData?.signers?.[0]?.safes?.[0]) return null;
+  const transformWallet = useCallback((userData: unknown): Wallet | null => {
+    if (!userData || typeof userData !== 'object') return null;
 
-    const safe = userData.signers[0].safes[0];
+    const data = userData as Record<string, unknown>;
+    const signers = data.signers as unknown[];
+    if (!signers?.[0] || typeof signers[0] !== 'object') return null;
+
+    const signer = signers[0] as Record<string, unknown>;
+    const safes = signer.safes as unknown[];
+    if (!safes?.[0] || typeof safes[0] !== 'object') return null;
+
+    const safe = safes[0] as Record<string, unknown>;
     return {
-      address: safe.address,
+      address: String(safe.address || ''),
       isConnected: true,
-      chainId: safe.chainId || 421614,
+      chainId: Number(safe.chainId || 421614),
     };
   }, []);
 
   // Convertit les données de transaction en format standard
-  const transformTransaction = useCallback((tx: any): Transaction => {
+  const transformTransaction = useCallback((tx: unknown): Transaction => {
+    if (!tx || typeof tx !== 'object') {
+      throw new Error('Invalid transaction data');
+    }
+
+    const txRecord = tx as Record<string, unknown>;
     // Gère les deux formats : historique (transaction_data) et temps réel (new_transaction)
     let transactionData;
     let isNewTransaction = false;
 
-    if (tx.newTransaction) {
+    if (txRecord.newTransaction) {
       // Format new_transaction : les données sont dans tx.newTransaction
-      transactionData = tx.newTransaction;
+      transactionData = txRecord.newTransaction;
       isNewTransaction = true;
-    } else if (tx.transaction) {
+    } else if (txRecord.transaction) {
       // Format transaction_data : les données sont dans tx.transaction
-      transactionData = tx.transaction;
+      transactionData = txRecord.transaction;
     } else {
       // Format direct
-      transactionData = tx;
+      transactionData = txRecord;
     }
+
+    // Vérifier que transactionData est un objet
+    if (!transactionData || typeof transactionData !== 'object') {
+      throw new Error('Invalid transaction data');
+    }
+
+    const txData = transactionData as Record<string, unknown>;
 
     // Calcul du montant selon le format
     let amount;
     if (isNewTransaction) {
       // Pour new_transaction : la valeur est déjà en EURe (pas de conversion wei)
-      amount = parseFloat(transactionData.value || '0');
+      amount = parseFloat(String(txData.value || '0'));
     } else {
       // Pour transaction_data : convertir wei en EURe (1 EURe = 10^18 wei)
-      const amountInWei = transactionData.value || '0';
-      amount =
-        typeof amountInWei === 'string' ? parseFloat(amountInWei) / Math.pow(10, 18) : amountInWei;
+      const amountInWei = String(txData.value || '0');
+      amount = parseFloat(amountInWei) / Math.pow(10, 18);
     }
 
     // Utilise le hash comme ID unique pour éviter les doublons
-    const id =
-      transactionData.transactionHash || transactionData.hash || String(transactionData.id);
+    const id = String(txData.transactionHash || txData.hash || txData.id || '');
 
     const result = {
       id,
       amount,
-      type: transactionData.direction === 'IN' ? 'IN' : 'OUT',
+      type: String(txData.direction || 'OUT') === 'IN' ? 'IN' : 'OUT',
       status: 'confirmed' as const,
-      date: transactionData.timestamp,
-      hash: transactionData.transactionHash || transactionData.hash,
-      from: transactionData.from,
-      to: transactionData.to,
+      date: String(txData.timestamp || ''),
+      hash: String(txData.transactionHash || txData.hash || ''),
+      from: String(txData.from || ''),
+      to: String(txData.to || ''),
     };
 
     return result as Transaction;
   }, []);
 
-  const transformOperation = useCallback((op: any): Operation => {
-    // Les opérations utilisent déjà le bon format (pas de conversion wei)
-    const amount = parseFloat(op.data?.params?.amount || '0');
+  const transformOperation = useCallback((op: unknown): Operation => {
+    if (!op || typeof op !== 'object') {
+      throw new Error('Invalid operation data');
+    }
+
+    const opData = op as Record<string, unknown>;
+    const data = opData.data as Record<string, unknown> | undefined;
+    const params = data?.params as Record<string, unknown> | undefined;
+    const amount = parseFloat(String(params?.amount || '0'));
 
     return {
-      id: op.id,
-      type: op.type as any,
-      status: op.safeOperation?.status || op.status || 'unknown',
-      amount: amount,
-      createdAt: op.createdAt,
-      ...(op.safeOperation && {
-        safeOperation: {
-          userOpHash: op.safeOperation.userOpHash,
-          status: op.safeOperation.status,
-        },
-      }),
+      id: String(opData.id || ''),
+      type: String(opData.type || '') as Operation['type'],
+      status: String(
+        (opData.safeOperation as Record<string, unknown>)?.status || opData.status || 'unknown'
+      ) as Operation['status'],
+      amount,
+      createdAt: String(opData.createdAt || ''),
+      ...(opData.safeOperation && typeof opData.safeOperation === 'object'
+        ? {
+            safeOperation: {
+              userOpHash: String(
+                (opData.safeOperation as Record<string, unknown>).userOpHash || ''
+              ),
+              status: String((opData.safeOperation as Record<string, unknown>).status || ''),
+            },
+          }
+        : {}),
     };
   }, []);
-
-  // ========================================================================
-  // RECHARGEMENT DES OPÉRATIONS
-  // ========================================================================
-
-  // Debounce pour éviter les appels multiples
-  const refreshOperationsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isRefreshingOperationsRef = useRef<boolean>(false);
-
-  const refreshOperations = useCallback(async () => {
-    // Évite les appels simultanés
-    if (isRefreshingOperationsRef.current) {
-      return;
-    }
-
-    // Annule le refresh précédent s'il est en cours
-    if (refreshOperationsTimeoutRef.current) {
-      clearTimeout(refreshOperationsTimeoutRef.current);
-    }
-
-    // Programme un nouveau refresh avec un délai de 500ms
-    refreshOperationsTimeoutRef.current = setTimeout(async () => {
-      try {
-        isRefreshingOperationsRef.current = true;
-
-        const token = client.getToken();
-        if (!token) return;
-
-        const opData = await client.getUserOperations();
-        const operations = (opData?.data || [])
-          .filter((op: any) => {
-            // Filtre seulement les opérations exécutées
-            const safeStatus = op.safeOperation?.status;
-            return safeStatus === 'EXECUTED';
-          })
-          .map(transformOperation);
-
-        setData(prev => ({
-          ...prev,
-          operations,
-        }));
-
-        logger.info('OPERATIONS', 'Opérations rafraîchies', { count: operations.length });
-      } catch (error) {
-        logger.debug('OPERATIONS', 'Erreur lors du rafraîchissement des opérations', error);
-      } finally {
-        isRefreshingOperationsRef.current = false;
-      }
-    }, 500);
-  }, [client, transformOperation]);
 
   // ========================================================================
   // CALLBACKS WEBSOCKET
@@ -273,28 +238,53 @@ export function useIbex(config: IbexConfig): IbexReturn {
     if (wsCallbacksRef.current) return wsCallbacksRef.current;
 
     const callbacks = {
-      onAuthSuccess: (data: any) => {
+      onAuthSuccess: (data: unknown) => {
         logger.success('WebSocket', 'Authentifié avec succès', data);
+        // Les données initiales (balance_data, transaction_data, user_data)
+        // sont automatiquement envoyées après l'authentification
       },
 
       // Met à jour le solde quand reçu via WebSocket
-      onBalanceUpdate: (data: any) => {
+      onBalanceUpdate: (data: unknown) => {
+        if (!data || typeof data !== 'object') return;
+        const balanceData = data as Record<string, unknown>;
         setData(prev => ({
           ...prev,
           balance: {
-            amount: parseFloat(data.balance) || 0,
+            amount: parseFloat(String(balanceData.balance || '0')) || 0,
             symbol: 'EURe',
             usdValue: 0,
           },
         }));
 
-        // Rafraîchit les opérations quand le solde change
-        // car cela peut indiquer une nouvelle activité
-        refreshOperations();
+        // Les opérations sont maintenant mises à jour via WebSocket
+        // (operation_data, operation_update, new_operation)
+      },
+
+      // Gère les données initiales de transactions (transaction_data)
+      onTransactionData: (data: unknown) => {
+        if (!data || typeof data !== 'object') return;
+        const txData = data as Record<string, unknown>;
+        const transactions = txData.transactions as { data?: unknown[] } | undefined;
+
+        if (transactions?.data) {
+          const transformedTransactions = transactions.data
+            .map(transformTransaction)
+            .filter(tx => tx.id);
+
+          setData(prev => ({
+            ...prev,
+            transactions: deduplicateTransactions(transformedTransactions),
+          }));
+
+          logger.info('WebSocket', 'Transactions initiales chargées', {
+            count: transformedTransactions.length,
+          });
+        }
       },
 
       // Ajoute une nouvelle transaction à la liste (évite les doublons)
-      onNewTransaction: (data: any) => {
+      onNewTransaction: (data: unknown) => {
         const transaction = transformTransaction(data);
 
         setData(prev => {
@@ -312,12 +302,11 @@ export function useIbex(config: IbexConfig): IbexReturn {
           };
         });
 
-        // Rafraîchit les opérations quand une nouvelle transaction arrive
-        // car les opérations peuvent être liées aux transactions
-        refreshOperations();
+        // Les opérations sont maintenant mises à jour via WebSocket
+        // (operation_data, operation_update, new_operation)
       },
 
-      onUserData: (userData: any) => {
+      onUserData: (userData: unknown) => {
         setData(prev => ({
           ...prev,
           user: transformUser(userData),
@@ -325,8 +314,10 @@ export function useIbex(config: IbexConfig): IbexReturn {
         }));
       },
 
-      onIbanUpdate: (ibanData: any) => {
-        logger.info('IBAN', 'Statut IBAN mis à jour', ibanData);
+      onIbanUpdate: (ibanData: unknown) => {
+        if (!ibanData || typeof ibanData !== 'object') return;
+        const iban = ibanData as Record<string, unknown>;
+        logger.info('IBAN', 'Statut IBAN mis à jour', iban);
         setData(prev => ({
           ...prev,
           user: prev.user
@@ -334,16 +325,18 @@ export function useIbex(config: IbexConfig): IbexReturn {
                 ...prev.user,
                 iban: {
                   ...prev.user.iban,
-                  status: ibanData.newState,
-                  updatedAt: ibanData.updatedAt,
+                  status: String(iban.newState || '') as 'pending' | 'verified' | 'rejected',
+                  updatedAt: String(iban.updatedAt || ''),
                 },
               }
             : prev.user,
         }));
       },
 
-      onKycUpdate: (kycData: any) => {
-        logger.info('KYC', 'Statut KYC mis à jour', kycData);
+      onKycUpdate: (kycData: unknown) => {
+        if (!kycData || typeof kycData !== 'object') return;
+        const kyc = kycData as Record<string, unknown>;
+        logger.info('KYC', 'Statut KYC mis à jour', kyc);
         setData(prev => ({
           ...prev,
           user: prev.user
@@ -351,16 +344,55 @@ export function useIbex(config: IbexConfig): IbexReturn {
                 ...prev.user,
                 kyc: {
                   ...prev.user.kyc,
-                  status: kycData.newKyc.toLowerCase() as 'pending' | 'verified' | 'rejected',
-                  updatedAt: kycData.updatedAt,
+                  status: String(kyc.newKyc || '').toLowerCase() as
+                    | 'pending'
+                    | 'verified'
+                    | 'rejected',
+                  updatedAt: String(kyc.updatedAt || ''),
                 },
               }
             : prev.user,
         }));
       },
 
+      // Gère les données initiales d'opérations (operation_data)
+      onOperationData: (data: unknown) => {
+        if (!data || typeof data !== 'object') return;
+        const opData = data as Record<string, unknown>;
+        const operations = opData.operations as unknown[] | undefined;
+
+        if (operations) {
+          const transformedOperations = operations
+            .filter((op: unknown) => {
+              if (!op || typeof op !== 'object') return false;
+              const opData = op as Record<string, unknown>;
+              const safeOperation = opData.safeOperation as Record<string, unknown> | undefined;
+              const safeStatus = safeOperation?.status;
+              const opStatus = opData.status;
+
+              // Accepter les opérations exécutées (différentes variantes)
+              return (
+                safeStatus === 'EXECUTED' ||
+                safeStatus === 'executed' ||
+                opStatus === 'EXECUTED' ||
+                opStatus === 'executed'
+              );
+            })
+            .map(transformOperation);
+
+          setData(prev => ({
+            ...prev,
+            operations: transformedOperations,
+          }));
+
+          logger.info('WebSocket', 'Opérations initiales chargées', {
+            count: transformedOperations.length,
+          });
+        }
+      },
+
       // Met à jour les opérations en temps réel
-      onOperationUpdate: (operationData: any) => {
+      onOperationUpdate: (operationData: unknown) => {
         logger.info('OPERATION', 'Opération mise à jour', operationData);
         const operation = transformOperation(operationData);
 
@@ -397,13 +429,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
     wsCallbacksRef.current = callbacks;
     return callbacks;
-  }, [
-    transformTransaction,
-    transformUser,
-    transformWallet,
-    deduplicateTransactions,
-    refreshOperations,
-  ]);
+  }, [transformTransaction, transformUser, transformWallet, deduplicateTransactions]);
 
   // ========================================================================
   // INITIALISATION WEBSOCKET
@@ -412,13 +438,14 @@ export function useIbex(config: IbexConfig): IbexReturn {
   const initializeWebSocket = useCallback(
     async (jwtToken: string) => {
       const wsConfig: WebSocketConfig = {
-        apiUrl: config.baseURL.replace('http', 'ws') + '/ws',
+        apiUrl: `${config.baseURL.replace('http', 'ws')}/ws`,
         jwtToken,
         clientName: 'IBEX SDK',
       };
 
       const callbacks = createWebSocketCallbacks();
-      await WebSocketManager.connect(wsConfig, callbacks);
+      const wsService = new WebSocketService(wsConfig, callbacks);
+      wsService.connect();
     },
     [config.baseURL, createWebSocketCallbacks]
   );
@@ -444,14 +471,28 @@ export function useIbex(config: IbexConfig): IbexReturn {
         return;
       }
 
-      // Charge les opérations depuis l'API
+      // Charge les opérations initiales via API REST
+      // (le WebSocket ne fournit pas les opérations initiales)
       try {
-        const opData = await client.getUserOperations();
-        const operations = (opData?.data || [])
-          .filter((op: any) => {
-            // Filtre seulement les opérations exécutées
-            const safeStatus = op.safeOperation?.status;
-            return safeStatus === 'EXECUTED';
+        const opData = (await client.getUserOperations()) as { data?: unknown[] };
+        const allOperations = opData?.data || [];
+
+        const operations = allOperations
+          .filter((op: unknown) => {
+            if (!op || typeof op !== 'object') return false;
+
+            const opData = op as Record<string, unknown>;
+            const safeOperation = opData.safeOperation as Record<string, unknown> | undefined;
+            const safeStatus = safeOperation?.status;
+            const opStatus = opData.status;
+
+            // Accepter les opérations exécutées (différentes variantes)
+            return (
+              safeStatus === 'EXECUTED' ||
+              safeStatus === 'executed' ||
+              opStatus === 'EXECUTED' ||
+              opStatus === 'executed'
+            );
           })
           .map(transformOperation);
 
@@ -459,14 +500,17 @@ export function useIbex(config: IbexConfig): IbexReturn {
           ...prev,
           operations,
         }));
-      } catch (opError) {
-        logger.debug('HOOK', 'Erreur lors du chargement des opérations', opError);
-        // Continue même si les opérations échouent
+
+        logger.info('Chargement', 'Opérations initiales chargées', {
+          count: operations.length,
+        });
+      } catch (error) {
+        logger.error('OPERATIONS', 'Erreur lors du chargement des opérations', error);
       }
 
       // Initialise le WebSocket pour les mises à jour temps réel
       await initializeWebSocket(token);
-      setIsWebSocketConnected(WebSocketManager.connected);
+      setIsWebSocketConnected(true);
 
       logger.success('Chargement', 'Données initiales chargées');
     } catch (error) {
@@ -517,7 +561,6 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
     try {
       await client.logout();
-      WebSocketManager.disconnect();
     } finally {
       setData({
         user: null,
@@ -554,30 +597,6 @@ export function useIbex(config: IbexConfig): IbexReturn {
     return data.wallet.address;
   }, [data.wallet?.address]);
 
-  const withdraw = useCallback(
-    async (amount: number, iban: string) => {
-      if (!data.wallet?.address) throw new Error('Portefeuille non connecté');
-
-      setIsLoading(true);
-      clearError();
-
-      try {
-        await client.withdrawToIban(
-          data.wallet.address,
-          421614,
-          amount.toString(),
-          iban,
-          'Retrait IBEX'
-        );
-      } catch (error) {
-        handleError(error, 'Erreur de retrait');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [data.wallet?.address, client, clearError, handleError]
-  );
-
   const startKyc = useCallback(
     async (language: string = 'fr'): Promise<string> => {
       try {
@@ -604,63 +623,6 @@ export function useIbex(config: IbexConfig): IbexReturn {
       setIsLoading(false);
     }
   }, [loadInitialData, clearError, handleError]);
-
-  // ========================================================================
-  // ACTIONS IBEX SAFE
-  // ========================================================================
-
-  const getUserPrivateData = useCallback(
-    async (externalUserId: string): Promise<Record<string, any>> => {
-      try {
-        return await client.getUserPrivateData(externalUserId);
-      } catch (error) {
-        handleError(error, 'Erreur récupération données privées');
-        return {};
-      }
-    },
-    [client, handleError]
-  );
-
-  const saveUserPrivateData = useCallback(
-    async (externalUserId: string, data: Record<string, any>): Promise<{ success: boolean }> => {
-      try {
-        return await client.saveUserPrivateData(externalUserId, data);
-      } catch (error) {
-        handleError(error, 'Erreur sauvegarde données privées');
-        return { success: false };
-      }
-    },
-    [client, handleError]
-  );
-
-  const validateEmail = useCallback(
-    async (email: string, externalUserId: string): Promise<any> => {
-      try {
-        return await client.validateEmail(email, externalUserId);
-      } catch (error) {
-        handleError(error, 'Erreur validation email');
-        return null;
-      }
-    },
-    [client, handleError]
-  );
-
-  const confirmEmail = useCallback(
-    async (
-      email: string,
-      code: string,
-      externalUserId: string,
-      options: any = {}
-    ): Promise<any> => {
-      try {
-        return await client.confirmEmail(email, code, externalUserId, options);
-      } catch (error) {
-        handleError(error, 'Erreur confirmation email');
-        return null;
-      }
-    },
-    [client, handleError]
-  );
 
   // ========================================================================
   // EFFECT PRINCIPAL
@@ -700,10 +662,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
       mounted = false;
       isInitialized.current = false;
 
-      // Nettoie le timeout de refresh des opérations
-      if (refreshOperationsTimeoutRef.current) {
-        clearTimeout(refreshOperationsTimeoutRef.current);
-      }
+      // Nettoyage des ressources
     };
   }, [client, loadInitialData]);
 
@@ -730,16 +689,9 @@ export function useIbex(config: IbexConfig): IbexReturn {
     logout,
     send,
     receive,
-    withdraw,
     startKyc,
     refresh,
     clearError,
-
-    // Actions IBEX Safe
-    getUserPrivateData,
-    saveUserPrivateData,
-    validateEmail,
-    confirmEmail,
 
     // Utilitaires
     getKycStatusLabel,

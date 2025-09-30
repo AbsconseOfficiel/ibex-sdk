@@ -9,6 +9,7 @@
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
 
 [![npm version](https://img.shields.io/npm/v/@absconse/ibex-sdk?color=blue&label=npm)](https://www.npmjs.com/package/@absconse/ibex-sdk)
+![npm downloads](https://img.shields.io/npm/dm/@absconse/ibex-sdk)
 
 [![GitHub Stars](https://img.shields.io/github/stars/AbsconseOfficiel/ibex-sdk?style=social)](https://github.com/AbsconseOfficiel/ibex-sdk)
 
@@ -92,6 +93,7 @@ Types stricts pour une meilleure expérience de développement et moins d'erreur
 ![Type Safe](https://img.shields.io/badge/Type-Safe-brightgreen)
 
 - **Hook unique** : `useIbex()` pour tout faire
+- **Architecture hybride** : API REST (initial) + WebSocket (temps réel)
 - **Données prêtes** : Plus besoin de formatage manuel
 - **Gestion d'erreurs** : Système d'erreurs unifié et clair
 - **Types stricts** : IntelliSense complet et validation
@@ -299,10 +301,10 @@ L'IBEX SDK utilise **WebAuthn**, le standard W3C pour l'authentification sans mo
 ![Cache](https://img.shields.io/badge/Cache-Smart-blue)
 ![Bundle](https://img.shields.io/badge/Bundle-Lightweight-green)
 
+- **Architecture hybride** : API REST (1 requête initiale) + WebSocket (temps réel)
 - **Cache intelligent** : Évite les requêtes inutiles
-- **Lazy loading** : Chargement des données à la demande
-- **Debouncing** : Protection contre les appels API excessifs
-- **Compression** : Données optimisées pour le réseau
+- **WebSocket optimisé** : Mises à jour automatiques sans polling
+- **Minimum de requêtes** : Seulement les opérations initiales via API
 
 ### Monitoring
 
@@ -387,5 +389,3 @@ Suivez notre [guide de démarrage](./docs/getting-started.md) pour intégrer l'I
 
 > 🔗 Propulsé par [Dylan Enjolvin](https://github.com/AbsconseOfficiel)  
 > 📄 Sous licence [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
-
-Made with ❤️ by the Absconse - Dylan ENJOLVIN

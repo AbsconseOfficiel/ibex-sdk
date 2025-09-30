@@ -1,0 +1,103 @@
+name: Security Issue
+description: Signaler un problème de sécurité (PRIVÉ)
+title: '[SECURITY] '
+labels: ['security', 'needs-triage']
+assignees: ['AbsconseOfficiel']
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **ATTENTION : Cette issue sera traitée en privé**
+
+        **Pour les vulnérabilités de sécurité, préférez :**
+        - LinkedIn : [Dylan Enjolvin](https://www.linkedin.com/in/dylanenjolvin/)
+
+        **Cette issue sera fermée et traitée en privé.**
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du problème de sécurité
+      description: Décrivez le problème de sécurité (sans détails techniques sensibles)
+      placeholder: 'Problème potentiel avec la validation des tokens...'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Gravité
+      description: Quelle est la gravité du problème ?
+      options:
+        - '🔴 Critique - Impact immédiat'
+        - '🟡 Important - Impact significatif'
+        - '🟢 Mineur - Amélioration de sécurité'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Catégorie
+      description: Dans quelle catégorie ce problème s'inscrit-il ?
+      options:
+        - '🔐 Authentification'
+        - '🌐 WebSocket'
+        - '💰 Transactions'
+        - '🏦 Portefeuille'
+        - '📊 Données'
+        - '🔧 Configuration'
+        - '📱 Interface'
+        - 'Autre'
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact potentiel
+      description: Quel est l'impact potentiel sur les utilisateurs ?
+      placeholder: 'Les utilisateurs pourraient être exposés à...'
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      description: Comment reproduire le problème (sans révéler d'informations sensibles)
+      placeholder: '1. Configurer le SDK avec... 2. Appeler la fonction... 3. Observer...'
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Mesures d'atténuation
+      description: Avez-vous des suggestions pour atténuer le problème ?
+      placeholder: 'Ajouter une validation supplémentaire de...'
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications
+      description: Cochez les éléments qui s'appliquent
+      options:
+        - label: "J'ai vérifié que ce n'est pas un faux positif"
+          required: true
+        - label: 'Je comprends que cette issue sera traitée en privé'
+          required: true
+        - label: "J'ai fourni suffisamment d'informations"
+          required: true
+        - label: "Je suis disponible pour plus d'informations si nécessaire"
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Traitement en privé
+
+        Cette issue sera :
+        1. **Fermée immédiatement** pour éviter l'exposition publique
+        2. **Traitée en privé** par l'équipe de sécurité
+        3. **Corrigée** si nécessaire
+        4. **Publiquement divulguée** après correction (si approprié)
+
+        **Merci de votre vigilance !**

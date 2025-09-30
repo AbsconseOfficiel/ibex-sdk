@@ -82,9 +82,9 @@ export class ApiClient {
     endpoint: string,
     options: {
       method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-      body?: any;
-      params?: Record<string, any>;
-      queryParams?: Record<string, any>;
+      body?: unknown;
+      params?: Record<string, unknown>;
+      queryParams?: Record<string, unknown>;
       token?: string;
       cache?: boolean;
       cacheTTL?: number;
@@ -258,7 +258,7 @@ export class ApiClient {
   // CACHE SIMPLE
   // ========================================================================
 
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
 
   private getFromCache<T>(key: string): T | null {
     const entry = this.cache.get(key);
@@ -270,7 +270,7 @@ export class ApiClient {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
   private setCache<T>(key: string, data: T, ttl: number): void {

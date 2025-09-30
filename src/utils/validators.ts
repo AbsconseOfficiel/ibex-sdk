@@ -103,7 +103,7 @@ export function isValidEmail(email: string): boolean {
  * @param config - Configuration à valider
  * @returns True si la configuration est valide
  */
-export function isValidConfig(config: any): config is {
+export function isValidConfig(config: unknown): config is {
   baseURL: string;
   domain: string;
   rpId?: string;
@@ -113,12 +113,14 @@ export function isValidConfig(config: any): config is {
 } {
   if (!config || typeof config !== 'object') return false;
 
-  if (!config.baseURL || typeof config.baseURL !== 'string') return false;
-  if (!config.domain || typeof config.domain !== 'string') return false;
+  const configData = config as Record<string, unknown>;
+
+  if (!configData.baseURL || typeof configData.baseURL !== 'string') return false;
+  if (!configData.domain || typeof configData.domain !== 'string') return false;
 
   // Vérifier que l'URL est valide
   try {
-    new URL(config.baseURL);
+    new URL(configData.baseURL);
   } catch {
     return false;
   }
@@ -135,7 +137,7 @@ export function isValidConfig(config: any): config is {
  * @param data - Données à valider
  * @returns True si les données sont valides
  */
-export function isValidUserData(data: any): boolean {
+export function isValidUserData(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
 
   // Vérifier qu'il n'y a pas de clés vides
@@ -155,7 +157,7 @@ export function isValidUserData(data: any): boolean {
  * @param operation - Opération à valider
  * @returns True si l'opération est valide
  */
-export function isValidSafeOperation(operation: any): boolean {
+export function isValidSafeOperation(operation: unknown): boolean {
   if (!operation || typeof operation !== 'object') return false;
 
   const validTypes = [
@@ -167,18 +169,20 @@ export function isValidSafeOperation(operation: any): boolean {
     'CANCEL_RECOVERY',
   ];
 
-  if (!validTypes.includes(operation.type)) return false;
+  const opData = operation as Record<string, unknown>;
+
+  if (!validTypes.includes(String(opData.type))) return false;
 
   // Vérifier les champs requis selon le type
-  switch (operation.type) {
+  switch (opData.type) {
     case 'TRANSFER_EURe':
-      return operation.to && operation.amount;
+      return Boolean(opData.to && opData.amount);
     case 'MONERIUM_WITHDRAW_EURe':
-      return operation.amount && operation.to; // 'to' contient l'IBAN
+      return Boolean(opData.amount && opData.to); // 'to' contient l'IBAN
     case 'SIGN_MESSAGE':
-      return operation.message;
+      return Boolean(opData.message);
     case 'ENABLE_RECOVERY':
-      return operation.firstName && operation.lastName && operation.birthDate;
+      return Boolean(opData.firstName && opData.lastName && opData.birthDate);
     default:
       return true;
   }
@@ -193,17 +197,28 @@ export function isValidSafeOperation(operation: any): boolean {
  * @param params - Paramètres à valider
  * @returns True si les paramètres sont valides
  */
-export function isValidTransactionParams(params: any): boolean {
+export function isValidTransactionParams(params: unknown): boolean {
   if (!params || typeof params !== 'object') return false;
 
+  const paramsData = params as Record<string, unknown>;
+
   // Vérifier les dates si présentes
-  if (params.startDate && !isValidDate(params.startDate)) return false;
-  if (params.endDate && !isValidDate(params.endDate)) return false;
+  if (paramsData.startDate && !isValidDate(String(paramsData.startDate))) return false;
+  if (paramsData.endDate && !isValidDate(String(paramsData.endDate))) return false;
 
   // Vérifier la pagination
-  if (params.limit && (!Number.isInteger(params.limit) || params.limit < 1 || params.limit > 100))
+  if (
+    paramsData.limit &&
+    (!Number.isInteger(Number(paramsData.limit)) ||
+      Number(paramsData.limit) < 1 ||
+      Number(paramsData.limit) > 100)
+  )
     return false;
-  if (params.page && (!Number.isInteger(params.page) || params.page < 1)) return false;
+  if (
+    paramsData.page &&
+    (!Number.isInteger(Number(paramsData.page)) || Number(paramsData.page) < 1)
+  )
+    return false;
 
   return true;
 }
