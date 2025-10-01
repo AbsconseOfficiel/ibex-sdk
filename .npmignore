@@ -55,3 +55,4 @@ logs/
 *.tmp
 *.temp
 .cursor
+.github

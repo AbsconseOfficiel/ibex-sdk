@@ -111,11 +111,45 @@ export function useIbex(config: IbexConfig): IbexReturn {
     const kycLevel = parseInt(String(data.ky || '0'), 10);
     const email = kycLevel >= 5 ? String(data.email || '') : null;
 
+    // Logique KYC selon l'équipe IBEX :
+    // - level 0 : pas encore initié de KYC (not_started)
+    // - level 1 : en cours (in_progress)
+    // - level 2 : dossier envoyé (dossier_sent)
+    // - level 3 : manque de pièce (missing_document)
+    // - level 4 : refusé (rejected)
+    // - level 5 : accepté (verified)
+    let kycStatus:
+      | 'not_started'
+      | 'in_progress'
+      | 'dossier_sent'
+      | 'missing_document'
+      | 'rejected'
+      | 'verified' = 'not_started';
+    if (kycLevel === 0) {
+      // Nouvel utilisateur : pas encore initié de KYC
+      kycStatus = 'not_started';
+    } else if (kycLevel === 1) {
+      // KYC en cours
+      kycStatus = 'in_progress';
+    } else if (kycLevel === 2) {
+      // Dossier envoyé
+      kycStatus = 'dossier_sent';
+    } else if (kycLevel === 3) {
+      // Manque de pièce
+      kycStatus = 'missing_document';
+    } else if (kycLevel === 4) {
+      // KYC refusé
+      kycStatus = 'rejected';
+    } else if (kycLevel === 5) {
+      // KYC accepté
+      kycStatus = 'verified';
+    }
+
     return {
       id: String(data.id || ''),
       email,
       kyc: {
-        status: kycLevel >= 5 ? 'verified' : 'pending',
+        status: kycStatus,
         level: kycLevel,
       },
     };
@@ -174,11 +208,13 @@ export function useIbex(config: IbexConfig): IbexReturn {
     let amount;
     if (isNewTransaction) {
       // Pour new_transaction : la valeur est déjà en EURe (pas de conversion wei)
-      amount = parseFloat(String(txData.value || '0'));
+      const parsed = parseFloat(String(txData.value || '0'));
+      amount = isNaN(parsed) ? 0 : parsed;
     } else {
       // Pour transaction_data : convertir wei en EURe (1 EURe = 10^18 wei)
       const amountInWei = String(txData.value || '0');
-      amount = parseFloat(amountInWei) / Math.pow(10, 18);
+      const parsed = parseFloat(amountInWei);
+      amount = isNaN(parsed) ? 0 : parsed / Math.pow(10, 18);
     }
 
     // Utilise le hash comme ID unique pour éviter les doublons
@@ -189,7 +225,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
       amount,
       type: String(txData.direction || 'OUT') === 'IN' ? 'IN' : 'OUT',
       status: 'confirmed' as const,
-      date: String(txData.timestamp || ''),
+      date: txData.timestamp ? String(txData.timestamp) : new Date().toISOString(),
       hash: String(txData.transactionHash || txData.hash || ''),
       from: String(txData.from || ''),
       to: String(txData.to || ''),
@@ -206,7 +242,8 @@ export function useIbex(config: IbexConfig): IbexReturn {
     const opData = op as Record<string, unknown>;
     const data = opData.data as Record<string, unknown> | undefined;
     const params = data?.params as Record<string, unknown> | undefined;
-    const amount = parseFloat(String(params?.amount || '0'));
+    const parsed = parseFloat(String(params?.amount || '0'));
+    const amount = isNaN(parsed) ? 0 : parsed;
 
     return {
       id: String(opData.id || ''),
@@ -248,10 +285,22 @@ export function useIbex(config: IbexConfig): IbexReturn {
       onBalanceUpdate: (data: unknown) => {
         if (!data || typeof data !== 'object') return;
         const balanceData = data as Record<string, unknown>;
+
+        // Conversion sécurisée pour éviter NaN
+        const balanceValue = balanceData.balance;
+        let amount = 0;
+
+        if (typeof balanceValue === 'number' && !isNaN(balanceValue)) {
+          amount = balanceValue;
+        } else if (typeof balanceValue === 'string') {
+          const parsed = parseFloat(balanceValue);
+          amount = isNaN(parsed) ? 0 : parsed;
+        }
+
         setData(prev => ({
           ...prev,
           balance: {
-            amount: parseFloat(String(balanceData.balance || '0')) || 0,
+            amount,
             symbol: 'EURe',
             usdValue: 0,
           },
@@ -285,22 +334,26 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
       // Ajoute une nouvelle transaction à la liste (évite les doublons)
       onNewTransaction: (data: unknown) => {
-        const transaction = transformTransaction(data);
+        try {
+          const transaction = transformTransaction(data);
 
-        setData(prev => {
-          // Vérifie si la transaction existe déjà
-          const exists = prev.transactions.some(tx => tx.id === transaction.id);
-          if (exists) return prev;
+          setData(prev => {
+            // Vérifie si la transaction existe déjà
+            const exists = prev.transactions.some(tx => tx.id === transaction.id);
+            if (exists) return prev;
 
-          // Ajoute la nouvelle transaction et déduplique
-          const newTransactions = [transaction, ...prev.transactions];
-          const deduplicated = deduplicateTransactions(newTransactions);
+            // Ajoute la nouvelle transaction et déduplique
+            const newTransactions = [transaction, ...prev.transactions];
+            const deduplicated = deduplicateTransactions(newTransactions);
 
-          return {
-            ...prev,
-            transactions: deduplicated.slice(0, 50), // Limite à 50 transactions
-          };
-        });
+            return {
+              ...prev,
+              transactions: deduplicated.slice(0, 50), // Limite à 50 transactions
+            };
+          });
+        } catch (error) {
+          logger.warn('WebSocket', 'Nouvelle transaction invalide ignorée', error);
+        }
 
         // Les opérations sont maintenant mises à jour via WebSocket
         // (operation_data, operation_update, new_operation)
@@ -345,9 +398,12 @@ export function useIbex(config: IbexConfig): IbexReturn {
                 kyc: {
                   ...prev.user.kyc,
                   status: String(kyc.newKyc || '').toLowerCase() as
-                    | 'pending'
-                    | 'verified'
-                    | 'rejected',
+                    | 'not_started'
+                    | 'in_progress'
+                    | 'dossier_sent'
+                    | 'missing_document'
+                    | 'rejected'
+                    | 'verified',
                   updatedAt: String(kyc.updatedAt || ''),
                 },
               }
@@ -664,7 +720,7 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
       // Nettoyage des ressources
     };
-  }, [client, loadInitialData]);
+  }, [client]); // Suppression de loadInitialData des dépendances pour éviter les boucles
 
   // ========================================================================
   // RETOUR DU HOOK
@@ -706,6 +762,8 @@ export function useIbex(config: IbexConfig): IbexReturn {
 
 function getKycStatusLabel(level: number): string {
   switch (level) {
+    case 0:
+      return 'Non initié';
     case 1:
       return 'En cours';
     case 2:

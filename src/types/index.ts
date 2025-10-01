@@ -22,7 +22,13 @@ export interface User {
   id: string;
   email: string | null; // null si KYC non fait
   kyc: {
-    status: 'pending' | 'verified' | 'rejected';
+    status:
+      | 'not_started'
+      | 'in_progress'
+      | 'dossier_sent'
+      | 'missing_document'
+      | 'rejected'
+      | 'verified';
     level: number;
     updatedAt?: string;
   };
@@ -335,7 +341,13 @@ export interface KycResponse {
 /**
  * Statut KYC
  */
-export type KycStatus = 'pending' | 'verified' | 'rejected';
+export type KycStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'dossier_sent'
+  | 'missing_document'
+  | 'rejected'
+  | 'verified';
 
 /**
  * Informations du statut KYC

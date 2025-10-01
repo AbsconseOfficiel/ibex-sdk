@@ -285,16 +285,21 @@ export class IbexClient {
     // 1. Préparer l'opération
     const preparation = await this.prepareSafeOperation(safeAddress, chainId, operations);
 
-    // 2. Signer avec WebAuthn
+    // 2. Préparer les options WebAuthn (correction du bug ArrayBuffer)
+    const options = prepareWebAuthnAuthenticationOptions(
+      (preparation as any).credentialRequestOptions
+    );
+
+    // 3. Signer avec WebAuthn
     const credential = await navigator.credentials.get({
-      publicKey: (preparation as any).credentialRequestOptions,
+      publicKey: options as any,
     });
 
     if (!credential) {
       throw new Error('Échec de la signature WebAuthn');
     }
 
-    // 3. Exécuter l'opération
+    // 4. Exécuter l'opération
     return this.apiClient.request('/v1/safes/operations', {
       method: 'PUT',
       body: { credential },
