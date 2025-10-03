@@ -85,7 +85,7 @@ export type {
 
 // Clients principaux
 export { ApiClient } from './core/ApiClient';
-export { CacheManager } from './core/CacheManager';
+export { StorageManager } from './core/StorageManager';
 
 // Services internes
 export { WebSocketService } from './services/WebSocketService';

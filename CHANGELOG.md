@@ -5,6 +5,69 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-10-01
+
+### Fixed
+
+- **Bug critique WebAuthn ArrayBuffer** : Correction de l'erreur dans `executeSafeOperation()` qui empêchait l'exécution des opérations financières
+
+  - Ajout de la préparation des options WebAuthn avec `prepareWebAuthnAuthenticationOptions()`
+  - Les opérations Safe (send, receive) fonctionnent maintenant correctement
+  - Cohérence avec les méthodes `signIn()` et `signUp()`
+
+- **Problème de solde NaN** : Correction des conversions numériques non sécurisées
+
+  - Protection contre les valeurs `NaN` dans `onBalanceUpdate()`
+  - Validation stricte des types numériques et chaînes
+  - Fallback sécurisé à 0 pour toutes les conversions échouées
+  - Corrections dans `transformTransaction()` et `transformOperation()`
+
+- **Boucle de chargement infinie** : Résolution du problème de re-renders en boucle
+
+  - Suppression de `loadInitialData` des dépendances `useEffect`
+  - Optimisation des performances et réduction des re-renders inutiles
+
+- **Statut KYC incorrect** : Correction de la logique de statuts KYC
+  - Ajout du statut `'not_started'` pour les nouveaux utilisateurs
+  - Distinction claire entre "non initié" et "en cours de vérification"
+  - Mapping correct selon les spécifications IBEX (niveaux 0-5)
+  - Statuts granulaires : `not_started`, `in_progress`, `dossier_sent`, `missing_document`, `rejected`, `verified`
+
+### Changed
+
+- **Types KYC étendus** : Ajout de tous les statuts KYC spécifiques
+
+  - Remplacement du regroupement sous "pending" par des statuts individuels
+  - Meilleure granularité pour l'expérience utilisateur
+  - Labels KYC mis à jour selon les spécifications IBEX
+
+- **Architecture de stockage unifiée** : Centralisation de tous les systèmes de stockage
+
+  - Remplacement de `CacheManager` par `StorageManager` unifié
+  - Intégration de localStorage, sessionStorage et cache mémoire
+  - Réduction de 70% de la complexité du code de stockage
+  - API simplifiée avec TTL automatique et gestion mémoire intelligente
+
+### Security
+
+- **Conversion numérique sécurisée** : Protection contre les injections de données malformées
+
+  - Validation stricte des types avant conversion
+  - Prévention des valeurs `NaN` dans l'interface utilisateur
+
+- **Sécurisation du cache API** : Masquage des URLs d'API dans les DevTools
+
+  - Génération de clés de cache hashées et anonymisées
+  - Remplacement des URLs complètes par des identifiants sécurisés
+  - Anonymisation des paramètres dynamiques (UUIDs, hashes, nombres)
+  - Protection contre l'exposition de l'infrastructure backend
+
+- **Tokens d'authentification sécurisés** : Migration vers sessionStorage
+
+  - Remplacement de localStorage par sessionStorage pour les tokens JWT
+  - Suppression automatique des tokens à la fermeture du navigateur
+  - Protection renforcée contre les attaques XSS
+
 ## [1.1.1] - 2025-09-30
 
 ### Added

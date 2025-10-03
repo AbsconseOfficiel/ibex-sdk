@@ -1,4 +1,4 @@
-name: ❓ Question
+name: Question
 description: Poser une question sur l'utilisation du SDK
 title: '[QUESTION] '
 labels: ['question', 'needs-triage']

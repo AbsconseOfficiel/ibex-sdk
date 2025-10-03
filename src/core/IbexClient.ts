@@ -7,7 +7,7 @@
  */
 
 import { ApiClient } from './ApiClient';
-import { CacheManager } from './CacheManager';
+import { StorageManager } from './StorageManager';
 import {
   prepareWebAuthnRegistrationOptions,
   prepareWebAuthnAuthenticationOptions,
@@ -19,11 +19,16 @@ import type { IbexConfig, AuthResponse } from '../types';
  */
 export class IbexClient {
   public readonly apiClient: ApiClient;
-  public readonly cacheManager: CacheManager;
+  public readonly storage: StorageManager;
 
   constructor(config: IbexConfig) {
     this.apiClient = new ApiClient(config);
-    this.cacheManager = new CacheManager();
+    this.storage = new StorageManager({
+      enableMemoryCache: true,
+      enableSessionStorage: true,
+      enablePersistentStorage: true,
+      defaultTTL: 60000,
+    });
   }
 
   // ========================================================================
@@ -114,7 +119,7 @@ export class IbexClient {
    */
   async logout(): Promise<void> {
     this.apiClient.clearTokens();
-    this.cacheManager.clear();
+    this.storage.clear();
   }
 
   // ========================================================================
@@ -127,7 +132,7 @@ export class IbexClient {
    */
   async getUserDetails(): Promise<unknown> {
     const cacheKey = 'user_details';
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const userDetails = await this.apiClient.request('/v1/users/me', {
@@ -135,7 +140,7 @@ export class IbexClient {
       cacheTTL: 30000,
     });
 
-    this.cacheManager.set(cacheKey, userDetails, 30000, ['user']);
+    this.storage.setCacheData(cacheKey, userDetails, 30000);
     return userDetails;
   }
 
@@ -145,7 +150,7 @@ export class IbexClient {
    */
   async getWalletAddresses(): Promise<unknown> {
     const cacheKey = 'wallet_addresses';
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const addresses = await this.apiClient.request('/v1/users/me/address', {
@@ -153,7 +158,7 @@ export class IbexClient {
       cacheTTL: 300000,
     });
 
-    this.cacheManager.set(cacheKey, addresses, 300000, ['wallet']);
+    this.storage.setCacheData(cacheKey, addresses, 300000);
     return addresses;
   }
 
@@ -163,7 +168,7 @@ export class IbexClient {
    */
   async getSupportedChainIds(): Promise<unknown> {
     const cacheKey = 'supported_chain_ids';
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const chainIds = await this.apiClient.request('/v1/users/me/chainid', {
@@ -171,7 +176,7 @@ export class IbexClient {
       cacheTTL: 300000,
     });
 
-    this.cacheManager.set(cacheKey, chainIds, 300000, ['wallet']);
+    this.storage.setCacheData(cacheKey, chainIds, 300000);
     return chainIds;
   }
 
@@ -181,7 +186,7 @@ export class IbexClient {
    */
   async getUserOperations(): Promise<unknown> {
     const cacheKey = 'user_operations';
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const operations = await this.apiClient.request('/v1/users/me/operations', {
@@ -189,7 +194,7 @@ export class IbexClient {
       cacheTTL: 30000,
     });
 
-    this.cacheManager.set(cacheKey, operations, 30000, ['operations']);
+    this.storage.setCacheData(cacheKey, operations, 30000);
     return operations;
   }
 
@@ -203,7 +208,7 @@ export class IbexClient {
    */
   async getBalances(address?: string): Promise<unknown> {
     const cacheKey = `balances_${address || 'default'}`;
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const balances = await this.apiClient.request('/v1/bcreader/balances', {
@@ -212,7 +217,7 @@ export class IbexClient {
       cacheTTL: 30000,
     });
 
-    this.cacheManager.set(cacheKey, balances, 30000, ['balance']);
+    this.storage.setCacheData(cacheKey, balances, 30000);
     return balances;
   }
 
@@ -241,7 +246,7 @@ export class IbexClient {
     if (endDate) queryParams.endDate = endDate;
 
     const cacheKey = `transactions_${JSON.stringify(queryParams)}`;
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const transactions = await this.apiClient.request('/v1/bcreader/transactions', {
@@ -250,7 +255,7 @@ export class IbexClient {
       cacheTTL: 60000,
     });
 
-    this.cacheManager.set(cacheKey, transactions, 60000, ['transactions']);
+    this.storage.setCacheData(cacheKey, transactions, 60000);
     return transactions;
   }
 
@@ -285,16 +290,21 @@ export class IbexClient {
     // 1. Préparer l'opération
     const preparation = await this.prepareSafeOperation(safeAddress, chainId, operations);
 
-    // 2. Signer avec WebAuthn
+    // 2. Préparer les options WebAuthn (correction du bug ArrayBuffer)
+    const options = prepareWebAuthnAuthenticationOptions(
+      (preparation as any).credentialRequestOptions
+    );
+
+    // 3. Signer avec WebAuthn
     const credential = await navigator.credentials.get({
-      publicKey: (preparation as any).credentialRequestOptions,
+      publicKey: options as any,
     });
 
     if (!credential) {
       throw new Error('Échec de la signature WebAuthn');
     }
 
-    // 3. Exécuter l'opération
+    // 4. Exécuter l'opération
     return this.apiClient.request('/v1/safes/operations', {
       method: 'PUT',
       body: { credential },
@@ -364,7 +374,7 @@ export class IbexClient {
    */
   async getUserPrivateData(externalUserId: string): Promise<unknown> {
     const cacheKey = `user_data_${externalUserId}`;
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const userData = await this.apiClient.request(
@@ -375,7 +385,7 @@ export class IbexClient {
       }
     );
 
-    this.cacheManager.set(cacheKey, userData, 300000, ['ibex_safe']);
+    this.storage.setCacheData(cacheKey, userData, 300000);
     return userData;
   }
 
@@ -394,7 +404,7 @@ export class IbexClient {
     });
 
     // Invalider le cache
-    this.cacheManager.invalidateByPattern(`user_data_${externalUserId}`);
+    this.storage.invalidate(`user_data_${externalUserId}`);
     return result;
   }
 
@@ -448,7 +458,7 @@ export class IbexClient {
    */
   async getRecoveryStatus(safeAddress: string): Promise<unknown> {
     const cacheKey = `recovery_status_${safeAddress}`;
-    const cached = this.cacheManager.get<unknown>(cacheKey);
+    const cached = this.storage.getCacheData<unknown>(cacheKey);
     if (cached) return cached;
 
     const status = await this.apiClient.request(`/v1/recovery/status/${safeAddress}`, {
@@ -456,7 +466,7 @@ export class IbexClient {
       cacheTTL: 60000,
     });
 
-    this.cacheManager.set(cacheKey, status, 60000, ['wallet']);
+    this.storage.setCacheData(cacheKey, status, 60000);
     return status;
   }
 
@@ -475,7 +485,7 @@ export class IbexClient {
    * Vider le cache
    */
   clearCache(): void {
-    this.cacheManager.clear();
+    this.storage.clear();
     this.apiClient.clearCache();
   }
 

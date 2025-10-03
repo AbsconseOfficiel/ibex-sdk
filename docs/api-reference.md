@@ -657,6 +657,74 @@ const secureSend = async (amount: number, to: string) => {
 
 ---
 
+## Gestionnaire de stockage (StorageManager)
+
+### Configuration
+
+```typescript
+import { StorageManager } from '@ibex/sdk';
+
+const storage = new StorageManager({
+  enableMemoryCache: true, // Cache mémoire (instantané)
+  enableSessionStorage: true, // SessionStorage (sécurisé)
+  enablePersistentStorage: true, // LocalStorage (persistant)
+  defaultTTL: 60000, // TTL par défaut (1 minute)
+  maxMemorySize: 100, // Limite mémoire (100 entrées)
+});
+```
+
+### Méthodes principales
+
+| Méthode                   | Description            | Type de stockage           |
+| ------------------------- | ---------------------- | -------------------------- |
+| `set(key, data, options)` | Stocker des données    | Mémoire/Session/Persistant |
+| `get(key)`                | Récupérer des données  | Auto-détection             |
+| `delete(key)`             | Supprimer des données  | Tous les stockages         |
+| `clear()`                 | Vider tout le stockage | Tous les stockages         |
+| `invalidate(pattern)`     | Invalider par pattern  | Tous les stockages         |
+
+### Types de stockage
+
+```typescript
+// Mémoire (instantané, perdu au rechargement)
+storage.set('temp_data', data, { type: 'memory', ttl: 30000 });
+
+// SessionStorage (sécurisé, perdu à la fermeture)
+storage.set('tokens', tokens, { type: 'session', ttl: 0 });
+
+// LocalStorage (persistant, survit aux rechargements)
+storage.set('user_prefs', prefs, { type: 'persistent', ttl: 0 });
+
+// Cache API (mémoire + session pour persistance)
+storage.setCacheData('balance', balance, 30000);
+```
+
+### Méthodes spécialisées
+
+```typescript
+// Tokens d'authentification
+storage.setTokens(accessToken, refreshToken);
+const { accessToken, refreshToken } = storage.getTokens();
+storage.clearTokens();
+
+// Données utilisateur
+storage.setUserData(userData);
+const userData = storage.getUserData<UserData>();
+
+// Cache de données
+storage.setCacheData('balance', balance, 30000);
+const balance = storage.getCacheData<Balance>('balance');
+```
+
+### Sécurité
+
+- **URLs d'API masquées** : Les clés de cache sont automatiquement hashées
+- **Tokens sécurisés** : Stockage en sessionStorage (supprimés à la fermeture)
+- **Anonymisation** : Paramètres dynamiques remplacés par des placeholders
+- **Gestion mémoire** : Éviction automatique des anciennes entrées
+
+---
+
 ## Configuration par environnement
 
 ```typescript
