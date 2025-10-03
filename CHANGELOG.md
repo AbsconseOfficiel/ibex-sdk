@@ -36,9 +36,17 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 
 - **Types KYC étendus** : Ajout de tous les statuts KYC spécifiques
+
   - Remplacement du regroupement sous "pending" par des statuts individuels
   - Meilleure granularité pour l'expérience utilisateur
   - Labels KYC mis à jour selon les spécifications IBEX
+
+- **Architecture de stockage unifiée** : Centralisation de tous les systèmes de stockage
+
+  - Remplacement de `CacheManager` par `StorageManager` unifié
+  - Intégration de localStorage, sessionStorage et cache mémoire
+  - Réduction de 70% de la complexité du code de stockage
+  - API simplifiée avec TTL automatique et gestion mémoire intelligente
 
 ### Security
 
@@ -46,6 +54,19 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
   - Validation stricte des types avant conversion
   - Prévention des valeurs `NaN` dans l'interface utilisateur
+
+- **Sécurisation du cache API** : Masquage des URLs d'API dans les DevTools
+
+  - Génération de clés de cache hashées et anonymisées
+  - Remplacement des URLs complètes par des identifiants sécurisés
+  - Anonymisation des paramètres dynamiques (UUIDs, hashes, nombres)
+  - Protection contre l'exposition de l'infrastructure backend
+
+- **Tokens d'authentification sécurisés** : Migration vers sessionStorage
+
+  - Remplacement de localStorage par sessionStorage pour les tokens JWT
+  - Suppression automatique des tokens à la fermeture du navigateur
+  - Protection renforcée contre les attaques XSS
 
 ## [1.1.1] - 2025-09-30
 

@@ -5,65 +5,46 @@
 // LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
 /**
- * Gestionnaire de cache intelligent pour IBEX SDK
- * Cache optimisé avec TTL et invalidation intelligente
+ * Cache pour IBEX SDK
  */
 
-/**
- * Entrée de cache avec métadonnées
- */
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-  tags?: string[];
+interface CacheEntry {
+  data: unknown;
+  timer: NodeJS.Timeout;
 }
 
 /**
- * Gestionnaire de cache avec TTL et invalidation par tags
+ * Gestionnaire de cache avec TTL automatique
  */
 export class CacheManager {
-  private cache = new Map<string, CacheEntry<unknown>>();
-  private tagIndex = new Map<string, Set<string>>();
-
-  // ========================================================================
-  // GESTION DU CACHE
-  // ========================================================================
+  private cache = new Map<string, CacheEntry>();
 
   /**
-   * Stocker des données dans le cache
+   * Stocker des données dans le cache avec TTL automatique
    */
-  set<T>(key: string, data: T, ttl: number = 60000, tags: string[] = []): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-      tags,
-    });
+  set<T>(key: string, data: T, ttl: number = 60000): void {
+    // Supprimer l'ancien timer s'il existe
+    const existing = this.cache.get(key);
+    if (existing) {
+      clearTimeout(existing.timer);
+    }
 
-    // Indexer par tags
-    tags.forEach(tag => {
-      if (!this.tagIndex.has(tag)) {
-        this.tagIndex.set(tag, new Set());
-      }
-      this.tagIndex.get(tag)?.add(key);
-    });
+    // Créer un nouveau timer pour l'expiration automatique
+    const timer = setTimeout(() => {
+      this.cache.delete(key);
+    }, ttl);
+
+    // Stocker avec le timer
+    this.cache.set(key, { data, timer });
   }
 
   /**
    * Récupérer des données du cache
+   * Plus besoin de vérifier l'expiration - gérée automatiquement
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    const isExpired = Date.now() - entry.timestamp > entry.ttl;
-    if (isExpired) {
-      this.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
+    return entry ? (entry.data as T) : null;
   }
 
   /**
@@ -71,66 +52,31 @@ export class CacheManager {
    */
   delete(key: string): void {
     const entry = this.cache.get(key);
-    if (entry?.tags) {
-      // Nettoyer l'index des tags
-      entry.tags.forEach(tag => {
-        const tagSet = this.tagIndex.get(tag);
-        if (tagSet) {
-          tagSet.delete(key);
-          if (tagSet.size === 0) {
-            this.tagIndex.delete(tag);
-          }
-        }
-      });
+    if (entry) {
+      clearTimeout(entry.timer);
+      this.cache.delete(key);
     }
-    this.cache.delete(key);
   }
 
   /**
    * Vider tout le cache
    */
   clear(): void {
+    // Nettoyer tous les timers pour éviter les fuites mémoire
+    for (const entry of this.cache.values()) {
+      clearTimeout(entry.timer);
+    }
     this.cache.clear();
-    this.tagIndex.clear();
-  }
-
-  // ========================================================================
-  // INVALIDATION PAR TAGS
-  // ========================================================================
-
-  /**
-   * Invalider le cache par tag
-   */
-  invalidateByTag(tag: string): void {
-    const keys = this.tagIndex.get(tag);
-    if (keys) {
-      keys.forEach(key => this.delete(key));
-    }
   }
 
   /**
-   * Invalider le cache par pattern
+   * Invalider le cache par pattern (remplace le système de tags complexe)
    */
-  invalidateByPattern(pattern: string): void {
-    for (const [key] of this.cache.entries()) {
-      if (key.includes(pattern)) {
-        this.delete(key);
-      }
-    }
-  }
-
-  // ========================================================================
-  // NETTOYAGE AUTOMATIQUE
-  // ========================================================================
-
-  /**
-   * Nettoyer les entrées expirées
-   */
-  cleanup(): void {
-    const now = Date.now();
+  invalidate(pattern: string): void {
     for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.delete(key);
+      if (key.includes(pattern)) {
+        clearTimeout(entry.timer);
+        this.cache.delete(key);
       }
     }
   }
@@ -138,38 +84,21 @@ export class CacheManager {
   /**
    * Obtenir les statistiques du cache
    */
-  getStats(): {
-    totalEntries: number;
-    expiredEntries: number;
-    tags: string[];
-  } {
-    const now = Date.now();
-    let expiredEntries = 0;
-
-    for (const [, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        expiredEntries++;
-      }
-    }
-
-    return {
-      totalEntries: this.cache.size,
-      expiredEntries,
-      tags: Array.from(this.tagIndex.keys()),
-    };
+  getStats(): { size: number } {
+    return { size: this.cache.size };
   }
 
-  // ========================================================================
-  // TAGS PRÉDÉFINIS POUR IBEX
-  // ========================================================================
+  /**
+   * Vérifier si une clé existe dans le cache
+   */
+  has(key: string): boolean {
+    return this.cache.has(key);
+  }
 
-  static readonly TAGS = {
-    USER: 'user',
-    WALLET: 'wallet',
-    BALANCE: 'balance',
-    TRANSACTIONS: 'transactions',
-    OPERATIONS: 'operations',
-    KYC: 'kyc',
-    IBEX_SAFE: 'ibex_safe',
-  } as const;
+  /**
+   * Obtenir toutes les clés du cache
+   */
+  keys(): string[] {
+    return Array.from(this.cache.keys());
+  }
 }

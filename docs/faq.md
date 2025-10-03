@@ -569,7 +569,7 @@ function OptimizedTransactionList() {
 
 ### Q: Comment gérer le cache des données ?
 
-**R:** Le SDK gère automatiquement le cache, mais vous pouvez le contrôler :
+**R:** Le SDK utilise un système de cache unifié et sécurisé :
 
 ```typescript
 // Rafraîchissement manuel
@@ -580,7 +580,29 @@ useEffect(() => {
   const interval = setInterval(refresh, 5 * 60 * 1000);
   return () => clearInterval(interval);
 }, [refresh]);
+
+// Accès direct au gestionnaire de stockage (usage avancé)
+import { StorageManager } from '@ibex/sdk';
+
+const storage = new StorageManager({
+  enableMemoryCache: true, // Cache mémoire (instantané)
+  enableSessionStorage: true, // SessionStorage (sécurisé)
+  enablePersistentStorage: true, // LocalStorage (persistant)
+  defaultTTL: 60000, // TTL par défaut (1 minute)
+});
+
+// Stockage sécurisé de données
+storage.setCacheData('user_balance', balance, 30000); // 30 secondes
+const cachedBalance = storage.getCacheData('user_balance');
 ```
+
+**Types de stockage :**
+
+- **Mémoire** : Données temporaires (perdues au rechargement)
+- **SessionStorage** : Données sécurisées (perdues à la fermeture du navigateur)
+- **LocalStorage** : Données persistantes (survivent aux rechargements)
+
+**Sécurité :** Les URLs d'API sont automatiquement masquées et hashées pour protéger l'infrastructure.
 
 ---
 

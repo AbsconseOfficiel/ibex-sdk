@@ -10,65 +10,40 @@
  */
 
 import type { IbexConfig, ApiError } from '../types';
+import { StorageManager } from './StorageManager';
 
 /**
  * Client API HTTP avec gestion du cache et des tokens
  */
 export class ApiClient {
   private config: IbexConfig;
-  private token: string | null = null;
-  private refreshToken: string | null = null;
+  private storage: StorageManager;
 
   constructor(config: IbexConfig) {
     this.config = config;
-    this.loadTokensFromStorage();
+    this.storage = new StorageManager({
+      enableMemoryCache: true,
+      enableSessionStorage: true,
+      enablePersistentStorage: true,
+      defaultTTL: 60000,
+    });
   }
 
   // ========================================================================
   // GESTION DES TOKENS
   // ========================================================================
 
-  private loadTokensFromStorage(): void {
-    if (typeof window === 'undefined') return;
-
-    this.token = localStorage.getItem('ibex_access_token');
-    this.refreshToken = localStorage.getItem('ibex_refresh_token');
-  }
-
-  private saveTokensToStorage(): void {
-    if (typeof window === 'undefined') return;
-
-    if (this.token) {
-      localStorage.setItem('ibex_access_token', this.token);
-    }
-    if (this.refreshToken) {
-      localStorage.setItem('ibex_refresh_token', this.refreshToken);
-    }
-  }
-
-  private clearTokensFromStorage(): void {
-    if (typeof window === 'undefined') return;
-
-    localStorage.removeItem('ibex_access_token');
-    localStorage.removeItem('ibex_refresh_token');
-  }
-
   setTokens(accessToken: string, refreshToken?: string): void {
-    this.token = accessToken;
-    if (refreshToken) {
-      this.refreshToken = refreshToken;
-    }
-    this.saveTokensToStorage();
+    this.storage.setTokens(accessToken, refreshToken);
   }
 
   getToken(): string | null {
-    return this.token;
+    const { accessToken } = this.storage.getTokens();
+    return accessToken;
   }
 
   clearTokens(): void {
-    this.token = null;
-    this.refreshToken = null;
-    this.clearTokensFromStorage();
+    this.storage.clearTokens();
   }
 
   // ========================================================================
@@ -125,14 +100,15 @@ export class ApiClient {
 
     // Vérifier le cache pour les requêtes GET
     if (method === 'GET' && cache) {
-      const cachedData = this.getFromCache<T>(url);
+      const cacheKey = this.generateCacheKey(endpoint, queryParams);
+      const cachedData = this.storage.getCacheData<T>(cacheKey);
       if (cachedData) {
         return cachedData;
       }
     }
 
     // Préparer les headers
-    const authToken = token || this.token;
+    const authToken = token || this.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -176,7 +152,8 @@ export class ApiClient {
 
             // Mettre en cache si nécessaire
             if (method === 'GET' && cache) {
-              this.setCache(url, result, cacheTTL);
+              const cacheKey = this.generateCacheKey(endpoint, queryParams);
+              this.storage.setCacheData(cacheKey, result, cacheTTL);
             }
 
             return result;
@@ -192,7 +169,8 @@ export class ApiClient {
 
       // Mettre en cache si nécessaire
       if (method === 'GET' && cache) {
-        this.setCache(url, result, cacheTTL);
+        const cacheKey = this.generateCacheKey(endpoint, queryParams);
+        this.storage.setCacheData(cacheKey, result, cacheTTL);
       }
 
       return result;
@@ -235,7 +213,8 @@ export class ApiClient {
   // ========================================================================
 
   private async refreshAccessToken(): Promise<string | null> {
-    if (!this.refreshToken) return null;
+    const { refreshToken } = this.storage.getTokens();
+    if (!refreshToken) return null;
 
     try {
       const response = await this.request<{
@@ -243,7 +222,7 @@ export class ApiClient {
         refresh_token?: string;
       }>('/v1/auth/refresh', {
         method: 'POST',
-        body: { refresh_token: this.refreshToken },
+        body: { refresh_token: refreshToken },
       });
 
       this.setTokens(response.access_token, response.refresh_token);
@@ -255,33 +234,44 @@ export class ApiClient {
   }
 
   // ========================================================================
-  // CACHE SIMPLE
+  // UTILITAIRES
   // ========================================================================
 
-  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+  /**
+   * Générer une clé de cache sécurisée (sans URL complète)
+   */
+  private generateCacheKey(endpoint: string, queryParams?: Record<string, unknown>): string {
+    // Nettoyer l'endpoint pour enlever les paramètres dynamiques
+    const cleanEndpoint = endpoint
+      .replace(/\/[a-fA-F0-9-]{36}/g, '/{id}') // UUIDs
+      .replace(/\/[a-fA-F0-9]{40}/g, '/{hash}') // Hashes Ethereum
+      .replace(/\/\d+/g, '/{number}'); // Nombres
 
-  private getFromCache<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
+    // Créer une clé basée sur l'endpoint et les paramètres
+    const paramsKey = queryParams ? JSON.stringify(queryParams) : '';
+    const fullKey = `${cleanEndpoint}${paramsKey}`;
 
-    const isExpired = Date.now() - entry.timestamp > entry.ttl;
-    if (isExpired) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data as T;
+    // Hasher la clé pour éviter les URLs en clair
+    return this.hashString(fullKey);
   }
 
-  private setCache<T>(key: string, data: T, ttl: number): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-    });
+  /**
+   * Hasher une chaîne de caractères (simple hash pour le cache)
+   */
+  private hashString(str: string): string {
+    let hash = 0;
+    if (str.length === 0) return hash.toString();
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convertir en 32-bit integer
+    }
+
+    return `api_${Math.abs(hash).toString(36)}`;
   }
 
   clearCache(): void {
-    this.cache.clear();
+    this.storage.clear();
   }
 }
