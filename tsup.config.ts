@@ -1,4 +1,4 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -13,7 +13,7 @@ export default defineConfig({
   esbuildOptions(options) {
     options.banner = {
       js: '"use client"',
-    };
+    }
   },
   onSuccess: 'echo "Build completed successfully!"',
-});
+})

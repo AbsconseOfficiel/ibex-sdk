@@ -106,19 +106,19 @@ graph LR
 ### Configuration minimale
 
 ```typescript
-import { IbexProvider } from '@absconse/ibex-sdk';
+import { IbexProvider } from '@absconse/ibex-sdk'
 
 const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com', // ⚠️ Doit correspondre exactement
-};
+}
 
 function App() {
   return (
     <IbexProvider config={config}>
       <YourApp />
     </IbexProvider>
-  );
+  )
 }
 ```
 
@@ -132,7 +132,7 @@ const config = {
   rpId: 'votre-domaine.com', // Identifiant Relying Party
   timeout: 30000, // Timeout en ms (défaut: 30s)
   debug: true, // Logs détaillés
-};
+}
 ```
 
 </details>
@@ -144,7 +144,7 @@ const config = {
 ### Le hook `useIbex()`
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function AuthComponent() {
   const {
@@ -154,7 +154,7 @@ function AuthComponent() {
     signIn, // Connexion
     signUp, // Inscription
     logout, // Déconnexion
-  } = useIbex(config);
+  } = useIbex()
 }
 ```
 
@@ -162,7 +162,7 @@ function AuthComponent() {
 
 ```tsx
 function LoginComponent() {
-  const { user, isLoading, error, signIn, signUp, logout, clearError } = useIbex(config);
+  const { user, isLoading, error, signIn, signUp, logout, clearError } = useIbex()
 
   // ❌ Gestion des erreurs
   if (error) {
@@ -172,7 +172,7 @@ function LoginComponent() {
         <p>{error}</p>
         <button onClick={clearError}>Réessayer</button>
       </div>
-    );
+    )
   }
 
   // Chargement
@@ -182,7 +182,7 @@ function LoginComponent() {
         <Spinner />
         <p>Vérification...</p>
       </div>
-    );
+    )
   }
 
   // Non connecté
@@ -210,7 +210,7 @@ function LoginComponent() {
           </p>
         </div>
       </div>
-    );
+    )
   }
 
   // Connecté
@@ -234,7 +234,7 @@ function LoginComponent() {
         Se déconnecter
       </button>
     </div>
-  );
+  )
 }
 ```
 
@@ -247,12 +247,12 @@ function LoginComponent() {
 ```typescript
 const handleSignUp = async () => {
   try {
-    await signUp('Mon Passkey IBEX'); // Nom personnalisé
+    await signUp('Mon Passkey IBEX') // Nom personnalisé
     // ✅ Compte créé et utilisateur connecté
   } catch (error) {
     // ❌ Erreur affichée automatiquement
   }
-};
+}
 ```
 
 **Ce qu'il se passe :**
@@ -270,12 +270,12 @@ const handleSignUp = async () => {
 ```typescript
 const handleSignIn = async () => {
   try {
-    await signIn();
+    await signIn()
     // ✅ Connexion réussie
   } catch (error) {
     // ❌ Gestion d'erreur
   }
-};
+}
 ```
 
 **Ce qu'il se passe :**
@@ -292,9 +292,9 @@ const handleSignIn = async () => {
 
 ```typescript
 const handleLogout = async () => {
-  await logout();
+  await logout()
   // ✅ Déconnexion réussie
-};
+}
 ```
 
 ---
@@ -310,40 +310,40 @@ const config = {
   domain: 'votre-domaine.com', // Domaine exact
   rpId: 'votre-domaine.com', // Correspond au domaine
   timeout: 30000, // Timeout raisonnable
-};
+}
 
 // ❌ MAUVAIS
 const badConfig = {
   baseURL: 'http://api.ibexwallet.org', // ❌ HTTP non sécurisé
   domain: '*.votre-domaine.com', // ❌ Wildcard non supporté
   rpId: 'different-domain.com', // ❌ Ne correspond pas
-};
+}
 ```
 
 ### Validation des utilisateurs
 
 ```typescript
 function SecureAction() {
-  const { user } = useIbex();
+  const { user } = useIbex()
 
   const handleAction = () => {
     // ✅ Vérifier l'authentification
     if (!user) {
-      alert("Connectez-vous d'abord");
-      return;
+      alert("Connectez-vous d'abord")
+      return
     }
 
     // ✅ Vérifier le KYC si nécessaire
     if (user.kyc.status !== 'verified') {
-      alert('Complétez votre KYC');
-      return;
+      alert('Complétez votre KYC')
+      return
     }
 
     // Action sécurisée
-    performAction();
-  };
+    performAction()
+  }
 
-  return <button onClick={handleAction}>Action sécurisée</button>;
+  return <button onClick={handleAction}>Action sécurisée</button>
 }
 ```
 
@@ -361,19 +361,19 @@ const getErrorMessage = (error: string) => {
     TimeoutError: 'Authentification expirée. Réessayez.',
     NetworkError: 'Erreur de connexion. Vérifiez votre réseau.',
     Unauthorized: 'Session expirée. Reconnectez-vous.',
-  };
+  }
 
-  return messages[error] || `Erreur inattendue: ${error}`;
-};
+  return messages[error] || `Erreur inattendue: ${error}`
+}
 ```
 
 </details>
 
 ```typescript
 function ErrorHandler() {
-  const { error, clearError } = useIbex(config);
+  const { error, clearError } = useIbex()
 
-  if (!error) return null;
+  if (!error) return null
 
   return (
     <div className="error-container">
@@ -385,7 +385,7 @@ function ErrorHandler() {
         <button onClick={() => window.location.reload()}>Recharger</button>
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -419,7 +419,7 @@ function MultiDeviceInfo() {
         <li>✅ Vos passkeys sont chiffrées de bout en bout</li>
       </ul>
     </div>
-  );
+  )
 }
 ```
 
@@ -502,7 +502,7 @@ const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
   debug: true, // Logs détaillés dans la console
-};
+}
 ```
 
 ---

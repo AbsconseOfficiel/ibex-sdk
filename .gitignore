@@ -1,5 +1,3 @@
-example/
-
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -20,21 +18,19 @@ out/
 .env.test.local
 .env.production.local
 
-# IDE
+# Editor directories and files
 .vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+.idea
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Example and development files (not for publication)
+example/
+openapi.json
 
 # Logs
 logs
@@ -53,17 +49,17 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
-
 # Optional npm cache directory
 .npm
 
 # Optional eslint cache
 .eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -83,10 +79,7 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-
-# Gatsby files
-.cache/
-public
+dist
 
 # Storybook build outputs
 .out
@@ -96,17 +89,16 @@ public
 tmp/
 temp/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Local development
-.local
-.cache
-.cursor
+# IDE files
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo

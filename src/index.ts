@@ -1,91 +1,172 @@
 // Copyright 2025 Dylan Enjolvin
 // Licensed under the Apache License, Version 2.0
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-// GitHub: https://github.com/AbsconseOfficiel
-// LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
 /**
- * Point d'entrée principal du SDK IBEX
+ * IBEX SDK - Point d'entrée principal
  *
- * TODO: Ajouter la documentation des exports
- * TODO: Implémenter les tests d'intégration
- * TODO: Ajouter la validation des types
+ * SDK React/TypeScript moderne pour l'intégration des services IBEX.
+ * Architecture modulaire avec features namespaced.
+ *
+ * @example
+ * ```typescript
+ * import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
+ *
+ * // Configuration
+ * const config = {
+ *   baseURL: 'https://api.ibex.com',
+ *   domain: 'myapp.com'
+ * };
+ *
+ * // Provider
+ * function App() {
+ *   return (
+ *     <IbexProvider config={config}>
+ *       <Dashboard />
+ *     </IbexProvider>
+ *   );
+ * }
+ *
+ * // Hook
+ * function Dashboard() {
+ *   const { user, balance, signIn, send, sdk } = useIbex();
+ *
+ *   // Usage simple
+ *   await signIn();
+ *   await send(100, '0x...');
+ *
+ *   // Usage avancé
+ *   await sdk.safe.enableRecovery({ ... });
+ *   await sdk.privacy.saveUserData({ ... });
+ * }
+ * ```
+ *
+ * @module @absconse/ibex-sdk
  */
 
 // ============================================================================
-// HOOKS
+// CLIENT & HOOK PRINCIPAL
 // ============================================================================
 
-// Hook principal pour l'intégration
-export { useIbex } from './hooks/useIbex';
-
-// ============================================================================
-// PROVIDERS
-// ============================================================================
-
-// Provider de configuration
-export { IbexProvider } from './context/IbexProvider';
-
-// ============================================================================
-// CORE
-// ============================================================================
-
-// Client IBEX simplifié
-export { IbexClient } from './core/IbexClient';
-
-// ============================================================================
-// UTILITAIRES
-// ============================================================================
-
-// Formatage des données
-export * from './utils/formatters';
-
-// Validation des entrées
-export * from './utils/validators';
-
-// Système de logs
-export { logger } from './utils/logger';
+export { IbexClient } from './core/client'
+export { useIbex } from './hooks/useIbex'
+export { IbexProvider, useIbexConfig } from './context/IbexProvider'
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-// Types TypeScript
 export type {
+  // Configuration
   IbexConfig,
+  CacheConfig,
+  WebSocketConfig,
+
+  // Types de base
   User,
   Wallet,
+  Balance,
   Transaction,
   Operation,
-  Balance,
+
+  // Auth
   AuthResponse,
-  UserDetails,
-  BalanceResponse,
-  TransactionResponse,
-  SafeOperation,
+  IframeResponse,
+
+  // Wallet
+  WalletAddressesResponse,
+  ChainIdsResponse,
+  UserDetailsResponse,
+  WalletInfo,
+
+  // Transactions
+  TransactionsHistoryResponse,
+  TransactionsBalancesResponse,
+  TransactionsOptions,
+
+  // Safe
   SafeOperationRequest,
   SafeOperationResponse,
-  SafeOperationInput,
+  TransferParams,
+  WithdrawParams,
+  SignMessageParams,
+  EnableRecoveryParams,
+  UserOperationsResponse,
   RecipientInfo,
-  KycResponse,
-  KycStatus,
-  KycStatusInfo,
-  ApiError,
-  ApiResponse,
-  TransactionOptions,
-  BalanceOptions,
-  WebAuthnOptions,
+
+  // Recovery
+  RecoveryStatusResponse,
+
+  // Privacy
   UserPrivateData,
   SaveUserDataResponse,
-} from './types';
+  ValidateEmailResponse,
+  ConfirmEmailParams,
+
+  // Blockchain
+  BalancesResponse,
+  TransactionsResponse,
+  TransactionsParams,
+} from './types'
+
+// ============================================================================
+// UTILITAIRES
+// ============================================================================
+
+// Formatters
+export {
+  formatCurrency,
+  formatUsd,
+  formatAddress,
+  formatHash,
+  formatDate,
+  formatRelativeDate,
+  getStatusClasses,
+  getTransactionIcon,
+  getOperationIcon,
+} from './utils/formatters'
+
+// Validators
+export {
+  isValidAddress,
+  isValidIban,
+  isValidAmount,
+  isValidAmountString,
+  isValidEmail,
+  isValidConfig,
+  isValidUserData,
+  isValidSafeOperation,
+  isValidTransactionParams,
+  isValidDate,
+} from './utils/validators'
+
+// Logger
+export { logger, LogLevel } from './utils/logger'
+
+// WebAuthn
+export {
+  challengeToArrayBuffer,
+  prepareWebAuthnRegistrationOptions,
+  prepareWebAuthnAuthenticationOptions,
+} from './utils/webauthn'
 
 // ============================================================================
 // CORE (usage avancé)
 // ============================================================================
 
-// Clients principaux
-export { ApiClient } from './core/ApiClient';
-export { StorageManager } from './core/StorageManager';
+export { HttpClient } from './core/http'
+export { StorageManager } from './core/StorageManager'
+export { WebSocketService } from './core/websocket'
 
-// Services internes
-export { WebSocketService } from './services/WebSocketService';
+// ============================================================================
+// FEATURES (usage direct sans hook)
+// ============================================================================
+
+export { AuthService } from './features/auth'
+export { UserService } from './features/users'
+export { BlockchainService } from './features/blockchain'
+export { SafeService } from './features/safe'
+export { KycService } from './features/kyc'
+export { RecoveryService } from './features/recovery'
+export { PrivacyService } from './features/privacy'
+export { HealthService } from './features/health'
