@@ -28,7 +28,7 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 
 - **Authentification WebAuthn** : Plus sécurisé que les mots de passe
 - **Architecture modulaire** : 8 features isolées (auth, wallet, safe, privacy, etc.)
-- **API simplifiée** : Actions simples via hook + SDK avancé
+- **API simplifiée** : Actions simples via hook + SDK complet
 - **Cache intelligent** : Multi-niveaux avec -90% de requêtes
 - **Temps réel** : WebSocket optimisé avec reconnexion automatique
 
@@ -38,7 +38,7 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 ### Avantages
 
 - **Simplicité** : API simple pour cas d'usage basiques
-- **Puissance** : SDK modulaire pour fonctionnalités avancées
+- **Puissance** : SDK complet pour fonctionnalités avancées
 - **Performance** : -90% requêtes API, -70% temps de chargement
 - **TypeScript** : Types stricts et autocomplétion complète
 - **Production-ready** : 100% du Swagger IBEX implémenté
@@ -60,26 +60,26 @@ npm install @absconse/ibex-sdk
 ### Configuration minimale
 
 ```typescript
-import { IbexProvider, useIbex } from '@absconse/ibex-sdk';
+import { IbexProvider, useIbex } from '@absconse/ibex-sdk'
 
 const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
-};
+}
 
 function App() {
   return (
     <IbexProvider config={config}>
       <Dashboard />
     </IbexProvider>
-  );
+  )
 }
 
 function Dashboard() {
-  const { user, balance, signIn, send, sdk } = useIbex();
+  const { user, balance, signIn, send, sdk } = useIbex()
 
   if (!user) {
-    return <button onClick={signIn}>Se connecter</button>;
+    return <button onClick={signIn}>Se connecter</button>
   }
 
   return (
@@ -94,23 +94,23 @@ function Dashboard() {
       {/* Actions avancées via SDK */}
       <button
         onClick={async () => {
-          const addresses = await sdk.wallet.getAddresses();
-          console.log('Mes adresses:', addresses);
+          const user = await sdk.users.getMe()
+          console.log('Mon profil:', user)
         }}
       >
-        Voir mes adresses
+        Voir mon profil
       </button>
 
       <button
         onClick={async () => {
-          const kycUrl = await sdk.kyc.start('fr');
-          window.open(kycUrl, '_blank');
+          const kycUrl = await sdk.privacy.startKyc('fr')
+          window.open(kycUrl, '_blank')
         }}
       >
         Compléter le KYC
       </button>
     </div>
-  );
+  )
 }
 ```
 
@@ -425,7 +425,7 @@ const config = {
   baseURL: 'https://api-testnet.ibexwallet.org',
   domain: 'localhost',
   debug: true,
-};
+}
 ```
 
 ### Staging
@@ -435,7 +435,7 @@ const config = {
   baseURL: 'https://api-staging.ibexwallet.org',
   domain: 'staging.yourapp.com',
   debug: false,
-};
+}
 ```
 
 ### Production
@@ -445,7 +445,7 @@ const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'yourapp.com',
   debug: false,
-};
+}
 ```
 
 ---

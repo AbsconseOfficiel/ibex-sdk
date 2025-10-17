@@ -22,7 +22,7 @@
 
 **Vérifications :**
 
-1. **Connexion WebSocket** : Vérifiez `isWebSocketConnected`
+1. **Connexion WebSocket** : Vérifiez `isConnected` (déconnexions gérées automatiquement)
 2. **Chargement initial** : Les opérations sont chargées une seule fois au démarrage
 3. **Filtrage** : Seules les opérations `EXECUTED` sont affichées
 4. **Logs** : Regardez la console pour "Opérations initiales chargées"
@@ -85,7 +85,7 @@ const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'your-domain.com',
   rpId: 'your-domain.com', // Doit correspondre au domaine
-};
+}
 ```
 
 </td>
@@ -102,7 +102,7 @@ const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'your-domain.com',
   // Le SDK gère automatiquement les préférences WebAuthn
-};
+}
 ```
 
 ### Q: L'erreur "NotSupportedError" apparaît, que faire ?
@@ -120,10 +120,10 @@ const config = {
 **R:** Utilisez le hook `useIbex` pour gérer les erreurs :
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function ErrorHandler() {
-  const { error, clearError } = useIbex(config);
+  const { error, clearError } = useIbex()
 
   if (error) {
     return (
@@ -132,10 +132,10 @@ function ErrorHandler() {
         <p>{error}</p>
         <button onClick={clearError}>Réessayer</button>
       </div>
-    );
+    )
   }
 
-  return null;
+  return null
 }
 ```
 
@@ -165,21 +165,21 @@ function ErrorHandler() {
 
 ```typescript
 // Vérification de l'état
-const { user, transactions, error, isLoading } = useIbex(config);
+const { user, transactions, error, isLoading } = useIbex()
 
 if (!user) {
-  return <div>Veuillez vous connecter</div>;
+  return <div>Veuillez vous connecter</div>
 }
 
 if (error) {
-  return <div>Erreur: {error}</div>;
+  return <div>Erreur: {error}</div>
 }
 
 if (isLoading) {
-  return <div>Chargement...</div>;
+  return <div>Chargement...</div>
 }
 
-console.log('Transactions:', transactions);
+console.log('Transactions:', transactions)
 ```
 
 </td>
@@ -199,15 +199,15 @@ console.log('Transactions:', transactions);
 
 ```typescript
 // Rafraîchir les données
-const { refresh, balance, error } = useIbex(config);
+const { refresh, balance, error } = useIbex()
 
 const handleRefresh = () => {
-  refresh();
-  console.log('Données actualisées');
-};
+  refresh()
+  console.log('Données actualisées')
+}
 
 if (error) {
-  console.error('Erreur de solde:', error);
+  console.error('Erreur de solde:', error)
 }
 ```
 
@@ -217,18 +217,19 @@ if (error) {
 
 ```typescript
 function RealTimeData() {
-  const { user, balance, transactions, isWebSocketConnected } = useIbex(config);
+  const { user, balance, transactions, isConnected } = useIbex()
 
   // Les données se mettent à jour automatiquement via WebSocket
   // Pas besoin de refresh manuel pour les transactions et le solde
+  // Les déconnexions WebSocket sont gérées automatiquement sans impact utilisateur
 
   return (
     <div>
-      <p>Connexion WebSocket: {isWebSocketConnected ? '✅' : '❌'}</p>
+      <p>Connexion WebSocket: {isConnected ? '✅' : '🔄 Reconnexion...'}</p>
       <p>Solde: {balance} EURe</p>
       <p>Transactions: {transactions.length}</p>
     </div>
-  );
+  )
 }
 ```
 
@@ -253,12 +254,12 @@ const formatAmount = (amount: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
-  }).format(amount);
-};
+  }).format(amount)
+}
 
 // Utilisation
-const { balance } = useIbex(config);
-console.log(formatAmount(balance)); // "22 212,89 €"
+const { balance } = useIbex()
+console.log(formatAmount(balance)) // "22 212,89 €"
 ```
 
 ### Q: Les hash de transactions sont trop longs, comment les raccourcir ?
@@ -267,14 +268,14 @@ console.log(formatAmount(balance)); // "22 212,89 €"
 
 ```typescript
 const formatAddress = (address: string) => {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
 
 // Utilisation
-const { transactions } = useIbex(config);
+const { transactions } = useIbex()
 transactions.forEach(tx => {
-  console.log(formatAddress(tx.hash)); // "0x4c9b...f625"
-});
+  console.log(formatAddress(tx.hash)) // "0x4c9b...f625"
+})
 ```
 
 ### Q: Comment afficher les statuts des transactions ?
@@ -287,21 +288,21 @@ const getStatusLabel = (status: string) => {
     confirmed: 'Confirmée',
     pending: 'En attente',
     failed: 'Échouée',
-  };
-  return statusMap[status] || 'Inconnue';
-};
+  }
+  return statusMap[status] || 'Inconnue'
+}
 
 const getStatusClasses = (status: string) => {
   const statusMap = {
     confirmed: 'text-green-600 bg-green-50',
     pending: 'text-yellow-600 bg-yellow-50',
     failed: 'text-red-600 bg-red-50',
-  };
-  return statusMap[status] || 'text-gray-600 bg-gray-50';
-};
+  }
+  return statusMap[status] || 'text-gray-600 bg-gray-50'
+}
 
 function TransactionStatus({ status }) {
-  return <span className={`status ${getStatusClasses(status)}`}>{getStatusLabel(status)}</span>;
+  return <span className={`status ${getStatusClasses(status)}`}>{getStatusLabel(status)}</span>
 }
 ```
 
@@ -330,14 +331,14 @@ function TransactionStatus({ status }) {
 
 ```typescript
 // Vérification de l'état d'authentification
-const { user, error } = useIbex(config);
+const { user, error } = useIbex()
 
 if (!user) {
-  return <div>Veuillez vous connecter pour effectuer des transferts</div>;
+  return <div>Veuillez vous connecter pour effectuer des transferts</div>
 }
 
 if (error) {
-  return <div>Erreur: {error}</div>;
+  return <div>Erreur: {error}</div>
 }
 ```
 
@@ -351,27 +352,27 @@ if (error) {
 
 ```typescript
 function TransferComponent() {
-  const { send, error, clearError } = useIbex(config);
-  const [localError, setLocalError] = useState(null);
+  const { send, error, clearError } = useIbex()
+  const [localError, setLocalError] = useState(null)
 
   const handleTransfer = async (amount: number, to: string) => {
     try {
-      setLocalError(null);
-      clearError();
-      await send(amount, to);
-      alert('Transfert réussi !');
+      setLocalError(null)
+      clearError()
+      await send(amount, to)
+      alert('Transfert réussi !')
     } catch (err) {
-      setLocalError(err.message);
-      console.error('Erreur de transfert:', err);
+      setLocalError(err.message)
+      console.error('Erreur de transfert:', err)
     }
-  };
+  }
 
   return (
     <div>
       {(error || localError) && <div className="error">{error || localError}</div>}
       {/* Formulaire de transfert */}
     </div>
-  );
+  )
 }
 ```
 
@@ -388,33 +389,33 @@ function TransferComponent() {
 ```typescript
 // Validation IBAN basique
 const isValidIban = (iban: string) => {
-  const cleanIban = iban.replace(/\s/g, '');
-  return cleanIban.length >= 15 && cleanIban.length <= 34;
-};
+  const cleanIban = iban.replace(/\s/g, '')
+  return cleanIban.length >= 15 && cleanIban.length <= 34
+}
 
 function WithdrawComponent() {
-  const { withdraw, user } = useIbex(config);
-  const [iban, setIban] = useState('');
-  const [amount, setAmount] = useState('');
+  const { withdraw, user } = useIbex()
+  const [iban, setIban] = useState('')
+  const [amount, setAmount] = useState('')
 
   const handleWithdraw = async () => {
     if (!user) {
-      alert('Veuillez vous connecter');
-      return;
+      alert('Veuillez vous connecter')
+      return
     }
 
     if (!isValidIban(iban)) {
-      alert('IBAN invalide');
-      return;
+      alert('IBAN invalide')
+      return
     }
 
     try {
-      await withdraw(parseFloat(amount), iban);
-      alert('Retrait réussi !');
+      await withdraw(parseFloat(amount), iban)
+      alert('Retrait réussi !')
     } catch (error) {
-      console.error('Erreur de retrait:', error);
+      console.error('Erreur de retrait:', error)
     }
-  };
+  }
 
   return (
     <div>
@@ -427,7 +428,7 @@ function WithdrawComponent() {
       />
       <button onClick={handleWithdraw}>Retirer</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -441,24 +442,24 @@ function WithdrawComponent() {
 
 ```typescript
 // Composant de transaction personnalisé
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function MyTransactionCard() {
-  const { transactions } = useIbex(config);
+  const { transactions } = useIbex()
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   const formatDate = (date: string) => {
     return new Intl.DateTimeFormat('fr-FR', {
       dateStyle: 'long',
       timeStyle: 'short',
-    }).format(new Date(date));
-  };
+    }).format(new Date(date))
+  }
 
   return (
     <div className="my-transaction-card">
@@ -478,7 +479,7 @@ function MyTransactionCard() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 ```
 
@@ -489,7 +490,7 @@ function MyTransactionCard() {
 ```typescript
 // Utilisation avec Tailwind
 function TransactionCard() {
-  const { transactions } = useIbex(config);
+  const { transactions } = useIbex()
 
   return (
     <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
@@ -513,7 +514,7 @@ function TransactionCard() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 ```
 
@@ -543,15 +544,15 @@ function TransactionCard() {
 
 ```typescript
 // Optimisation avec useMemo
-import { useMemo } from 'react';
-import { useIbex } from '@absconse/ibex-sdk';
+import { useMemo } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
 
 function OptimizedTransactionList() {
-  const { transactions } = useIbex(config);
+  const { transactions } = useIbex()
 
   const recentTransactions = useMemo(() => {
-    return transactions.slice(0, 5);
-  }, [transactions]);
+    return transactions.slice(0, 5)
+  }, [transactions])
 
   return (
     <div>
@@ -559,7 +560,7 @@ function OptimizedTransactionList() {
         <TransactionCard key={tx.id} transaction={tx} />
       ))}
     </div>
-  );
+  )
 }
 ```
 
@@ -573,27 +574,27 @@ function OptimizedTransactionList() {
 
 ```typescript
 // Rafraîchissement manuel
-const { refresh } = useIbex(config);
+const { refresh } = useIbex()
 
 // Rafraîchir toutes les 5 minutes
 useEffect(() => {
-  const interval = setInterval(refresh, 5 * 60 * 1000);
-  return () => clearInterval(interval);
-}, [refresh]);
+  const interval = setInterval(refresh, 5 * 60 * 1000)
+  return () => clearInterval(interval)
+}, [refresh])
 
 // Accès direct au gestionnaire de stockage (usage avancé)
-import { StorageManager } from '@ibex/sdk';
+import { StorageManager } from '@ibex/sdk'
 
 const storage = new StorageManager({
   enableMemoryCache: true, // Cache mémoire (instantané)
   enableSessionStorage: true, // SessionStorage (sécurisé)
   enablePersistentStorage: true, // LocalStorage (persistant)
   defaultTTL: 60000, // TTL par défaut (1 minute)
-});
+})
 
 // Stockage sécurisé de données
-storage.setCacheData('user_balance', balance, 30000); // 30 secondes
-const cachedBalance = storage.getCacheData('user_balance');
+storage.setCacheData('user_balance', balance, 30000) // 30 secondes
+const cachedBalance = storage.getCacheData('user_balance')
 ```
 
 **Types de stockage :**
@@ -618,11 +619,11 @@ const config = {
   domain: 'test.com',
   rpId: 'test.com',
   // Le SDK gère automatiquement les logs de debug
-};
+}
 
-<IbexProvider config={config}>
+;<IbexProvider config={config}>
   <YourApp />
-</IbexProvider>;
+</IbexProvider>
 ```
 
 ### Q: Comment déboguer les problèmes d'API ?
@@ -631,19 +632,19 @@ const config = {
 
 ```typescript
 // Logs de debug
-const { transactions, error, isLoading } = useIbex(config);
+const { transactions, error, isLoading } = useIbex()
 
 useEffect(() => {
   if (error) {
-    console.error('Erreur:', error);
+    console.error('Erreur:', error)
   }
   if (transactions) {
-    console.log('Transactions chargées:', transactions);
+    console.log('Transactions chargées:', transactions)
   }
   if (isLoading) {
-    console.log('Chargement en cours...');
+    console.log('Chargement en cours...')
   }
-}, [transactions, error, isLoading]);
+}, [transactions, error, isLoading])
 ```
 
 ### Q: Comment contribuer au SDK ?

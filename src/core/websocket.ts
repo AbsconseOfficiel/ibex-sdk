@@ -11,7 +11,6 @@
  * - File d'attente de messages pendant déconnexion
  * - Batch de messages pour optimiser la bande passante
  * - Types stricts pour tous les événements
- * - Metrics détaillées
  *
  * @module core/websocket
  */
@@ -113,14 +112,6 @@ export class WebSocketService {
   private isConnected = false
   private isReconnecting = false
 
-  // Metrics
-  private metrics = {
-    messagesReceived: 0,
-    messagesSent: 0,
-    reconnects: 0,
-    errors: 0,
-  }
-
   constructor(config: WebSocketConfig, callbacks: WebSocketCallbacks = {}) {
     this.config = config
     this.callbacks = callbacks
@@ -208,7 +199,6 @@ export class WebSocketService {
     this.ws.onmessage = event => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data)
-        this.metrics.messagesReceived++
 
         // Mettre à jour le timestamp de dernière réponse pour le heartbeat
         this.lastHeartbeatResponse = Date.now()
@@ -216,7 +206,6 @@ export class WebSocketService {
         this.handleMessage(message)
       } catch (error) {
         logger.error('WebSocket', 'Erreur de parsing du message', error)
-        this.metrics.errors++
       }
     }
 
@@ -228,13 +217,22 @@ export class WebSocketService {
 
       this.stopHeartbeat()
 
-      // Code 1008 = Token invalide
-      if (event.code === 1008) {
-        this.callbacks.onError?.('Token JWT invalide ou expiré')
+      // Codes d'erreur graves qui nécessitent une action utilisateur
+      const criticalCodes = [1008, 1002, 1003, 1006] // Token invalide, protocole, données, connexion fermée anormalement
+
+      if (criticalCodes.includes(event.code)) {
+        if (event.code === 1008) {
+          this.callbacks.onError?.('Token JWT invalide ou expiré')
+        } else {
+          this.callbacks.onError?.(
+            `Erreur de connexion (${event.code}): ${event.reason || 'Connexion fermée'}`
+          )
+        }
         return
       }
 
-      // Reconnexion automatique
+      // Pour les autres codes (1000, 1001, etc.), on ne considère pas comme une erreur grave
+      // Reconnexion automatique silencieuse
       if (!this.isReconnecting) {
         this.scheduleReconnect()
       }
@@ -242,8 +240,9 @@ export class WebSocketService {
 
     this.ws.onerror = error => {
       logger.error('WebSocket', 'Erreur', error)
-      this.metrics.errors++
-      this.callbacks.onError?.('Erreur de connexion WebSocket')
+      // Ne pas propager les erreurs de connexion comme des erreurs graves
+      // La reconnexion automatique s'occupera de rétablir la connexion
+      // Seulement logger l'erreur pour le debugging
     }
   }
 
@@ -330,7 +329,6 @@ export class WebSocketService {
 
     if (this.isConnected && this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(messageStr)
-      this.metrics.messagesSent++
     } else {
       // Mettre en file d'attente si non connecté
       if (this.messageQueue.length < this.maxQueueSize) {
@@ -367,7 +365,6 @@ export class WebSocketService {
       const message = this.messageQueue.shift()
       if (message && this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(message)
-        this.metrics.messagesSent++
       }
     }
   }
@@ -387,11 +384,11 @@ export class WebSocketService {
 
       // Vérifier si on a reçu une réponse récemment (plus tolérant)
       const timeSinceLastResponse = Date.now() - this.lastHeartbeatResponse
-      if (timeSinceLastResponse > this.heartbeatInterval * 3) {
-        // 3x au lieu de 2x
-        logger.warn('WebSocket', 'Pas de réponse au heartbeat, reconnexion')
-        this.disconnect()
-        this.connect()
+      if (timeSinceLastResponse > this.heartbeatInterval * 4) {
+        // 4x pour être encore plus tolérant
+        logger.warn('WebSocket', 'Pas de réponse au heartbeat, reconnexion douce')
+        // Reconnexion douce sans forcer la déconnexion
+        this.scheduleReconnect()
         return
       }
 
@@ -416,7 +413,8 @@ export class WebSocketService {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       logger.error('WebSocket', 'Nombre maximum de tentatives de reconnexion atteint')
-      this.callbacks.onError?.('Impossible de se connecter au WebSocket')
+      // Ne pas propager comme erreur grave, juste logger
+      // L'utilisateur peut toujours utiliser l'API REST
       return
     }
 
@@ -427,7 +425,6 @@ export class WebSocketService {
     )
 
     this.reconnectAttempts++
-    this.metrics.reconnects++
     this.isReconnecting = true
 
     logger.debug(
@@ -458,8 +455,25 @@ export class WebSocketService {
     }
   }
 
+  /**
+   * Réinitialise les tentatives de reconnexion
+   */
+  resetReconnectAttempts(): void {
+    this.reconnectAttempts = 0
+    this.isReconnecting = false
+  }
+
+  /**
+   * Force une reconnexion immédiate
+   */
+  forceReconnect(): void {
+    this.resetReconnectAttempts()
+    this.disconnect()
+    this.connect()
+  }
+
   // ========================================================================
-  // GETTERS & METRICS
+  // GETTERS
   // ========================================================================
 
   /**
@@ -467,29 +481,5 @@ export class WebSocketService {
    */
   get connected(): boolean {
     return this.isConnected
-  }
-
-  /**
-   * Récupère les métriques
-   */
-  getMetrics() {
-    return {
-      ...this.metrics,
-      queueSize: this.messageQueue.length,
-      reconnectAttempts: this.reconnectAttempts,
-      isConnected: this.isConnected,
-    }
-  }
-
-  /**
-   * Réinitialise les métriques
-   */
-  resetMetrics(): void {
-    this.metrics = {
-      messagesReceived: 0,
-      messagesSent: 0,
-      reconnects: 0,
-      errors: 0,
-    }
   }
 }

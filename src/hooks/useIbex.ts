@@ -73,10 +73,12 @@ interface IbexReturn {
   signUp: (passkeyName?: string) => Promise<void>
   logout: () => Promise<void>
   send: (amount: number, to: string) => Promise<void>
+  withdraw: (amount: number, iban: string) => Promise<void>
   receive: () => Promise<string>
   startKyc: (language?: string) => Promise<string>
   refresh: () => Promise<void>
   clearError: () => void
+  reconnectWebSocket: () => void
 
   // Accès au SDK complet pour usage avancé
   sdk: IbexClient
@@ -258,6 +260,14 @@ export function useIbex(): IbexReturn {
           },
 
           onError: errorMessage => {
+            // Ne pas afficher les erreurs WebSocket comme des erreurs graves
+            // Seulement logger pour le debugging
+            if (errorMessage.includes('WebSocket') || errorMessage.includes('connexion')) {
+              logger.warn('useIbex', 'Erreur WebSocket (non bloquante)', errorMessage)
+              return
+            }
+
+            // Seulement les erreurs critiques (token, authentification, etc.)
             setError(errorMessage)
           },
         }
@@ -450,6 +460,30 @@ export function useIbex(): IbexReturn {
     [data.wallet, client]
   )
 
+  const withdraw = useCallback(
+    async (amount: number, iban: string) => {
+      if (!data.wallet?.address) throw new Error('Portefeuille non connecté')
+
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        await client.withdraw({
+          safeAddress: data.wallet.address,
+          chainId: data.wallet.chainId,
+          amount,
+          iban,
+        })
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Erreur de retrait')
+        throw error
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [data.wallet, client]
+  )
+
   const receive = useCallback(async (): Promise<string> => {
     if (!data.wallet?.address) throw new Error('Portefeuille non connecté')
     return data.wallet.address
@@ -483,6 +517,12 @@ export function useIbex(): IbexReturn {
 
   const clearError = useCallback(() => {
     setError(null)
+  }, [])
+
+  const reconnectWebSocket = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.forceReconnect()
+    }
   }, [])
 
   // ========================================================================
@@ -549,10 +589,12 @@ export function useIbex(): IbexReturn {
     signUp,
     logout,
     send,
+    withdraw,
     receive,
     startKyc,
     refresh,
     clearError,
+    reconnectWebSocket,
 
     // SDK complet pour usage avancé
     sdk: client,

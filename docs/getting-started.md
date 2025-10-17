@@ -161,7 +161,7 @@ L'IBEX SDK nécessite deux paramètres essentiels :
 export const IBEX_CONFIG = {
   baseURL: 'https://api.ibexwallet.org', // URL de l'API IBEX
   domain: 'votre-domaine.com', // Votre domaine
-};
+}
 ```
 
 </td>
@@ -172,14 +172,14 @@ export const IBEX_CONFIG = {
 
 ```typescript
 // src/config/ibex.ts
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 export const IBEX_CONFIG = {
   baseURL: isDevelopment
     ? 'https://api-testnet.ibexwallet.org' // Environnement de test
     : 'https://api.ibexwallet.org', // Production
   domain: window.location.hostname, // Domaine automatique
-};
+}
 ```
 
 ---
@@ -193,20 +193,20 @@ L'IBEX SDK utilise un système de Provider React pour partager le contexte entre
 Modifiez votre `src/App.tsx` :
 
 ```typescript
-import React from 'react';
-import { IbexProvider } from '@absconse/ibex-sdk';
-import { IBEX_CONFIG } from './config/ibex';
-import Dashboard from './components/Dashboard';
+import React from 'react'
+import { IbexProvider } from '@absconse/ibex-sdk'
+import { IBEX_CONFIG } from './config/ibex'
+import Dashboard from './components/Dashboard'
 
 function App() {
   return (
     <IbexProvider config={IBEX_CONFIG}>
       <Dashboard />
     </IbexProvider>
-  );
+  )
 }
 
-export default App;
+export default App
 ```
 
 ### Comprendre le Provider
@@ -248,8 +248,8 @@ Le `IbexProvider` :
 Créez `src/components/Dashboard.tsx` :
 
 ```tsx
-import React from 'react';
-import { useIbex } from '@absconse/ibex-sdk';
+import React from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
 
 function Dashboard() {
   const {
@@ -264,11 +264,11 @@ function Dashboard() {
     signIn,
     signUp,
     logout,
-  } = useIbex(config);
+  } = useIbex()
 
   // Gestion des états de chargement
   if (isLoading) {
-    return <div>Vérification de l'authentification...</div>;
+    return <div>Vérification de l'authentification...</div>
   }
 
   // Gestion des erreurs
@@ -279,7 +279,7 @@ function Dashboard() {
         <p>{error}</p>
         <button onClick={() => window.location.reload()}>Réessayer</button>
       </div>
-    );
+    )
   }
 
   // Si l'utilisateur n'est pas connecté
@@ -294,7 +294,7 @@ function Dashboard() {
           <button onClick={signUp}>S'inscrire</button>
         </div>
       </div>
-    );
+    )
   }
 
   // Interface utilisateur connecté
@@ -307,10 +307,10 @@ function Dashboard() {
 
       <button onClick={logout}>Se déconnecter</button>
     </div>
-  );
+  )
 }
 
-export default Dashboard;
+export default Dashboard
 ```
 
 ### Comprendre le hook useIbex
@@ -352,8 +352,8 @@ Le hook `useIbex()` est votre point d'entrée principal :
 Modifiez votre `Dashboard.tsx` pour inclure les fonctionnalités financières :
 
 ```tsx
-import React from 'react';
-import { useIbex } from '@absconse/ibex-sdk';
+import React from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
 
 function Dashboard() {
   const {
@@ -374,26 +374,26 @@ function Dashboard() {
     signUp,
     logout,
     refresh,
-  } = useIbex(config);
+  } = useIbex()
 
   // Formatage des montants
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   // Gestion des états (identique à l'étape précédente)
-  if (isLoading) return <div>Chargement...</div>;
-  if (error) return <div>Erreur: {error}</div>;
+  if (isLoading) return <div>Chargement...</div>
+  if (error) return <div>Erreur: {error}</div>
   if (!user) {
     return (
       <div>
         <button onClick={signIn}>Se connecter</button>
         <button onClick={signUp}>S'inscrire</button>
       </div>
-    );
+    )
   }
 
   return (
@@ -430,10 +430,10 @@ function Dashboard() {
 
       <button onClick={refresh}>Actualiser les données</button>
     </div>
-  );
+  )
 }
 
-export default Dashboard;
+export default Dashboard
 ```
 
 **Points clés :**
@@ -483,12 +483,12 @@ La première fois qu'un utilisateur se connecte :
 ```typescript
 const handleSignUp = async () => {
   try {
-    await signUp('Mon nom de passkey'); // Optionnel
-    console.log('Compte créé avec succès !');
+    await signUp('Mon nom de passkey') // Optionnel
+    console.log('Compte créé avec succès !')
   } catch (error) {
-    console.error("Erreur lors de l'inscription:", error);
+    console.error("Erreur lors de l'inscription:", error)
   }
-};
+}
 ```
 
 ### Connexions suivantes
@@ -496,12 +496,12 @@ const handleSignUp = async () => {
 ```typescript
 const handleSignIn = async () => {
   try {
-    await signIn();
-    console.log('Connexion réussie !');
+    await signIn()
+    console.log('Connexion réussie !')
   } catch (error) {
-    console.error('Erreur de connexion:', error);
+    console.error('Erreur de connexion:', error)
   }
-};
+}
 ```
 
 ---
@@ -513,24 +513,24 @@ const handleSignIn = async () => {
 L'IBEX SDK peut retourner différents types d'erreurs :
 
 ```typescript
-const { error, clearError } = useIbex();
+const { error, clearError } = useIbex()
 
 const getErrorMessage = (error: string) => {
   switch (error) {
     case 'NotSupportedError':
-      return "Votre navigateur ne supporte pas l'authentification moderne";
+      return "Votre navigateur ne supporte pas l'authentification moderne"
     case 'NotAllowedError':
-      return "Authentification refusée par l'utilisateur";
+      return "Authentification refusée par l'utilisateur"
     case 'SecurityError':
-      return 'Erreur de sécurité, vérifiez que vous utilisez HTTPS';
+      return 'Erreur de sécurité, vérifiez que vous utilisez HTTPS'
     case 'Unauthorized':
-      return 'Session expirée, veuillez vous reconnecter';
+      return 'Session expirée, veuillez vous reconnecter'
     case 'NetworkError':
-      return 'Erreur de connexion, vérifiez votre réseau';
+      return 'Erreur de connexion, vérifiez votre réseau'
     default:
-      return error;
+      return error
   }
-};
+}
 
 if (error) {
   return (
@@ -539,7 +539,7 @@ if (error) {
       <p>{getErrorMessage(error)}</p>
       <button onClick={clearError}>Réessayer</button>
     </div>
-  );
+  )
 }
 ```
 

@@ -27,7 +27,7 @@ Le hook `useIbex()` est un hook React personnalisé qui :
 ### Fonctionnalités principales
 
 - **API simplifiée** : Actions courantes directement accessibles
-- **SDK modulaire** : Accès à toutes les features via `sdk.feature.method()`
+- **SDK modulaire** : Accès au client IBEX complet via `sdk`
 - **Données centralisées** : Utilisateur, transactions, opérations, soldes
 - **Cache intelligent** : Multi-niveaux avec stratégies optimisées
 - **Temps réel** : WebSocket optimisé avec reconnexion automatique
@@ -40,21 +40,21 @@ Le hook `useIbex()` est un hook React personnalisé qui :
 **v1.x** : Un seul hook avec tout mélangé
 
 ```typescript
-const { signIn, transferEURe, withdraw, startKyc } = useIbex();
+const { signIn, transferEURe, withdraw, startKyc } = useIbex()
 ```
 
 **v2.0** : API simplifiée + SDK modulaire
 
 ```typescript
-const { signIn, send, sdk } = useIbex();
+const { signIn, send, sdk } = useIbex()
 
 // Actions simples
-await signIn();
-await send(100, '0x...');
+await signIn()
+await send(100, '0x...')
 
 // Actions avancées via SDK
-await sdk.safe.transfer({ safeAddress, to, amount });
-await sdk.privacy.saveUserData(userId, { email });
+await sdk.safe.transfer({ to, amount })
+await sdk.privacy.saveUserData(userId, { email })
 ```
 
 </td>
@@ -99,21 +99,21 @@ await sdk.privacy.saveUserData(userId, { email });
 ### Import
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 ```
 
 ### Utilisation minimale
 
 ```typescript
 function MonComposant() {
-  const ibex = useIbex(config); // Configuration requise
+  const ibex = useIbex() // Configuration via IbexProvider
 
   return (
     <div>
       <p>Utilisateur: {ibex.user?.email}</p>
       <p>Solde: {ibex.balance}</p>
     </div>
-  );
+  )
 }
 ```
 
@@ -129,7 +129,7 @@ function MonComposant() {
     error, // Erreurs
     signIn, // Action de connexion
     send, // Action d'envoi
-  } = useIbex(config); // Configuration requise
+  } = useIbex() // Configuration via IbexProvider
 
   // Votre logique ici...
 }
@@ -144,51 +144,46 @@ function MonComposant() {
 ```typescript
 interface IbexData {
   // === DONNÉES UTILISATEUR ===
-  user: User | null; // Profil utilisateur complet
-  wallet: Wallet | null; // Informations du portefeuille
+  user: User | null // Profil utilisateur complet
+  wallet: Wallet | null // Informations du portefeuille
 
   // === DONNÉES FINANCIÈRES ===
-  balance: number; // Solde actuel (toujours un nombre)
-  transactions: Transaction[]; // Historique des transactions
-  operations: Operation[]; // Opérations utilisateur
+  balance: number // Solde actuel (toujours un nombre)
+  transactions: Transaction[] // Historique des transactions
+  operations: Operation[] // Opérations utilisateur
 
   // === ÉTAT DE L'APPLICATION ===
-  isLoading: boolean; // État de chargement global
-  error: string | null; // Erreur actuelle
+  isLoading: boolean // État de chargement global
+  error: string | null // Erreur actuelle
 
   // === ACTIONS D'AUTHENTIFICATION ===
-  signIn: () => Promise<void>; // Connexion
-  signUp: (name?: string) => Promise<void>; // Inscription
-  logout: () => Promise<void>; // Déconnexion
+  signIn: () => Promise<void> // Connexion
+  signUp: (name?: string) => Promise<void> // Inscription
+  logout: () => Promise<void> // Déconnexion
 
   // === ACTIONS FINANCIÈRES ===
-  send: (amount: number, to: string) => Promise<void>; // Envoyer
-  receive: () => Promise<string>; // Recevoir
-  withdraw: (amount: number, iban: string) => Promise<void>; // Retirer
+  send: (amount: number, to: string) => Promise<void> // Envoyer
+  receive: () => Promise<string> // Recevoir
+  withdraw: (amount: number, iban: string) => Promise<void> // Retirer
 
   // === ACTIONS KYC ===
-  startKyc: (language?: string) => Promise<string>; // Démarrer KYC
+  startKyc: (language?: string) => Promise<string> // Démarrer KYC
 
   // === ACTIONS IBEX SAFE ===
-  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>;
+  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>
   saveUserPrivateData: (
     externalUserId: string,
     data: Record<string, any>
-  ) => Promise<{ success: boolean }>;
-  validateEmail: (email: string, externalUserId: string) => Promise<any>;
-  confirmEmail: (
-    email: string,
-    code: string,
-    externalUserId: string,
-    options?: any
-  ) => Promise<any>;
+  ) => Promise<{ success: boolean }>
+  validateEmail: (email: string, externalUserId: string) => Promise<any>
+  confirmEmail: (email: string, code: string, externalUserId: string, options?: any) => Promise<any>
 
   // === UTILITAIRES ===
-  refresh: () => Promise<void>; // Actualiser les données
-  clearError: () => void; // Effacer les erreurs
-  getKycStatusLabel: (level: number) => string; // Libellé statut KYC
-  getOperationTypeLabel: (type: string) => string; // Libellé type d'opération
-  getOperationStatusLabel: (status: string) => string; // Libellé statut d'opération
+  refresh: () => Promise<void> // Actualiser les données
+  clearError: () => void // Effacer les erreurs
+  getKycStatusLabel: (level: number) => string // Libellé statut KYC
+  getOperationTypeLabel: (type: string) => string // Libellé type d'opération
+  getOperationStatusLabel: (status: string) => string // Libellé statut d'opération
 }
 ```
 
@@ -200,7 +195,7 @@ interface IbexData {
 
 ```tsx
 function AuthComponent() {
-  const { user, isLoading, error, signIn, signUp, logout, clearError } = useIbex(config);
+  const { user, isLoading, error, signIn, signUp, logout, clearError } = useIbex()
 
   // Gestion des erreurs
   if (error) {
@@ -210,12 +205,12 @@ function AuthComponent() {
         <p>{error}</p>
         <button onClick={clearError}>Réessayer</button>
       </div>
-    );
+    )
   }
 
   // État de chargement
   if (isLoading) {
-    return <div>Vérification de l'authentification...</div>;
+    return <div>Vérification de l'authentification...</div>
   }
 
   // Utilisateur non connecté
@@ -232,7 +227,7 @@ function AuthComponent() {
           Créer un compte
         </button>
       </div>
-    );
+    )
   }
 
   // Utilisateur connecté
@@ -246,7 +241,7 @@ function AuthComponent() {
         Se déconnecter
       </button>
     </div>
-  );
+  )
 }
 ```
 
@@ -276,15 +271,15 @@ function Dashboard() {
     clearError,
     getOperationTypeLabel,
     getOperationStatusLabel,
-  } = useIbex(config);
+  } = useIbex()
 
   // Formatage des montants
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   // Gestion des états
   if (error) {
@@ -293,15 +288,15 @@ function Dashboard() {
         <p>Erreur: {error}</p>
         <button onClick={clearError}>Réessayer</button>
       </div>
-    );
+    )
   }
 
   if (isLoading) {
-    return <div>Chargement des données...</div>;
+    return <div>Chargement des données...</div>
   }
 
   if (!user) {
-    return <div>Veuillez vous connecter</div>;
+    return <div>Veuillez vous connecter</div>
   }
 
   return (
@@ -386,7 +381,7 @@ function Dashboard() {
         </div>
       </section>
     </div>
-  );
+  )
 }
 ```
 
@@ -403,39 +398,39 @@ function Dashboard() {
 
 ```tsx
 function TransferComponent() {
-  const { send, error, clearError } = useIbex(config);
-  const [to, setTo] = useState('');
-  const [amount, setAmount] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const { send, error, clearError } = useIbex()
+  const [to, setTo] = useState('')
+  const [amount, setAmount] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const handleTransfer = async () => {
     if (!to || !amount) {
-      alert('Veuillez remplir tous les champs');
-      return;
+      alert('Veuillez remplir tous les champs')
+      return
     }
 
-    const numAmount = parseFloat(amount);
+    const numAmount = parseFloat(amount)
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert('Veuillez entrer un montant valide');
-      return;
+      alert('Veuillez entrer un montant valide')
+      return
     }
 
-    setLoading(true);
-    setSuccess(false);
-    clearError();
+    setLoading(true)
+    setSuccess(false)
+    clearError()
 
     try {
-      await send(numAmount, to);
-      setSuccess(true);
-      setTo('');
-      setAmount('');
+      await send(numAmount, to)
+      setSuccess(true)
+      setTo('')
+      setAmount('')
     } catch (err: any) {
-      console.error('Erreur de transfert:', err);
+      console.error('Erreur de transfert:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="transfer-component">
@@ -481,7 +476,7 @@ function TransferComponent() {
         </button>
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -501,7 +496,7 @@ function TransferComponent() {
 Le hook `useIbex()` gère automatiquement l'état de chargement :
 
 ```typescript
-const { isLoading } = useIbex(config);
+const { isLoading } = useIbex()
 
 if (isLoading) {
   return (
@@ -509,14 +504,14 @@ if (isLoading) {
       <div className="spinner"></div>
       <p>Chargement des données...</p>
     </div>
-  );
+  )
 }
 ```
 
 ### Gestion des erreurs
 
 ```typescript
-const { error, clearError } = useIbex(config);
+const { error, clearError } = useIbex()
 
 if (error) {
   return (
@@ -525,24 +520,24 @@ if (error) {
       <p>{error}</p>
       <button onClick={clearError}>Réessayer</button>
     </div>
-  );
+  )
 }
 ```
 
 ### Actualisation des données
 
 ```typescript
-const { refresh } = useIbex(config);
+const { refresh } = useIbex()
 
 // Actualiser toutes les données
 const handleRefresh = async () => {
   try {
-    await refresh();
-    console.log('Données actualisées');
+    await refresh()
+    console.log('Données actualisées')
   } catch (error) {
-    console.error("Erreur lors de l'actualisation:", error);
+    console.error("Erreur lors de l'actualisation:", error)
   }
-};
+}
 ```
 
 ---
@@ -561,11 +556,11 @@ Ne récupérez que les propriétés dont vous avez besoin :
 
 ```typescript
 function BalanceDisplay() {
-  const { balance, isLoading } = useIbex(config);
+  const { balance, isLoading } = useIbex()
 
-  if (isLoading) return <div>Chargement...</div>;
+  if (isLoading) return <div>Chargement...</div>
 
-  return <div>Solde: {balance}</div>;
+  return <div>Solde: {balance}</div>
 }
 ```
 
@@ -596,7 +591,7 @@ function BalanceDisplay() {
     validateEmail,
     confirmEmail,
     getKycStatusLabel,
-  } = useIbex();
+  } = useIbex()
 
   // Utilise seulement balance et isLoading...
 }
@@ -612,7 +607,7 @@ Toujours gérer les états de chargement et d'erreur :
 
 ```typescript
 function MonComposant() {
-  const { user, balance, isLoading, error, clearError } = useIbex(config);
+  const { user, balance, isLoading, error, clearError } = useIbex()
 
   // Gestion des erreurs en premier
   if (error) {
@@ -621,12 +616,12 @@ function MonComposant() {
         <p>{error}</p>
         <button onClick={clearError}>Réessayer</button>
       </div>
-    );
+    )
   }
 
   // Gestion du chargement
   if (isLoading) {
-    return <div>Chargement...</div>;
+    return <div>Chargement...</div>
   }
 
   // Interface normale
@@ -635,7 +630,7 @@ function MonComposant() {
       <p>Utilisateur: {user?.email}</p>
       <p>Solde: {balance}</p>
     </div>
-  );
+  )
 }
 ```
 
@@ -643,22 +638,22 @@ function MonComposant() {
 
 ```typescript
 function MonComposant() {
-  const { send, error, clearError } = useIbex(config);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const { send, error, clearError } = useIbex()
+  const [localError, setLocalError] = useState<string | null>(null)
 
   const handleSend = async (amount: number, to: string) => {
     try {
-      setLocalError(null);
-      clearError(); // Effacer les erreurs précédentes
+      setLocalError(null)
+      clearError() // Effacer les erreurs précédentes
 
-      await send(amount, to);
+      await send(amount, to)
 
       // Succès
-      alert('Transfert réussi !');
+      alert('Transfert réussi !')
     } catch (err: any) {
-      setLocalError(err.message);
+      setLocalError(err.message)
     }
-  };
+  }
 
   return (
     <div>
@@ -666,7 +661,7 @@ function MonComposant() {
 
       <button onClick={() => handleSend(100, '0x...')}>Envoyer 100€</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -675,7 +670,7 @@ function MonComposant() {
 Tirez parti des types TypeScript :
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function MonComposant() {
   const {
@@ -683,17 +678,17 @@ function MonComposant() {
     balance, // number
     transactions, // Transaction[]
     send, // (amount: number, to: string) => Promise<void>
-  } = useIbex();
+  } = useIbex()
 
   // TypeScript vous aide avec l'autocomplétion et la validation
   if (user) {
-    console.log(user.email); // ✅ Autocomplétion
-    console.log(user.kyc.status); // ✅ Types stricts
+    console.log(user.email) // ✅ Autocomplétion
+    console.log(user.kyc.status) // ✅ Types stricts
   }
 
   const handleSend = (amount: number, to: string) => {
-    send(amount, to); // ✅ Validation des types
-  };
+    send(amount, to) // ✅ Validation des types
+  }
 
   return (
     <div>
@@ -703,6 +698,6 @@ function MonComposant() {
         </div>
       ))}
     </div>
-  );
+  )
 }
 ```

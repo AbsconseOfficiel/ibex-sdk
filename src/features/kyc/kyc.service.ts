@@ -8,8 +8,8 @@
  * @module features/kyc
  */
 
-import type { HttpClient } from '../../core/http';
-import type { IframeResponse } from '../auth/auth.types';
+import type { HttpClient } from '../../core/http'
+import type { IframeResponse } from '../auth/auth.types'
 
 /**
  * Service de vérification d'identité (KYC)
@@ -29,14 +29,15 @@ export class KycService {
       method: 'POST',
       body: { language },
       cache: false,
-    });
+    })
 
     const finalReturnUrl =
-      returnUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+      returnUrl || (typeof window !== 'undefined' ? window.location.origin : '')
 
+    // Ajouter le paramètre language à l'URL du chatbot KYC
     return `${iframe.chatbotURL}?session=${iframe.sessionId}&returnUrl=${encodeURIComponent(
       finalReturnUrl
-    )}`;
+    )}&language=${encodeURIComponent(language)}`
   }
 
   /**
@@ -47,13 +48,13 @@ export class KycService {
    */
   async getStatus(): Promise<{ level: number; status: string }> {
     const userData = await this.http.request<{
-      ky: string;
+      ky: string
     }>('/v1/users/me', {
       cache: true,
       cacheTTL: 60000,
-    });
+    })
 
-    const level = parseInt(userData.ky || '0', 10);
+    const level = parseInt(userData.ky || '0', 10)
 
     // Mapper le level au status
     const statusMap: Record<number, string> = {
@@ -63,11 +64,11 @@ export class KycService {
       3: 'missing_document',
       4: 'rejected',
       5: 'verified',
-    };
+    }
 
     return {
       level,
       status: statusMap[level] || 'unknown',
-    };
+    }
   }
 }

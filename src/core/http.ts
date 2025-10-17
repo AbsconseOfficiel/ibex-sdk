@@ -11,7 +11,6 @@
  * - Interceptors request/response
  * - Gestion automatique refresh token
  * - Cache intelligent intégré
- * - Metrics et monitoring
  *
  * @module core/http
  */
@@ -62,15 +61,6 @@ export class HttpClient {
   private responseInterceptors: ResponseInterceptor[] = []
   private errorInterceptors: ErrorInterceptor[] = []
   private retryConfig: RetryConfig
-
-  // Metrics
-  private metrics = {
-    requestCount: 0,
-    successCount: 0,
-    errorCount: 0,
-    cacheHits: 0,
-    cacheMisses: 0,
-  }
 
   constructor(config: IbexConfig, storage: StorageManager) {
     this.config = config
@@ -126,8 +116,6 @@ export class HttpClient {
    * Effectue une requête HTTP
    */
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    this.metrics.requestCount++
-
     // Appliquer les interceptors de requête
     let finalOptions = options
     for (const interceptor of this.requestInterceptors) {
@@ -175,10 +163,8 @@ export class HttpClient {
       const cacheKey = this.generateCacheKey(endpoint, queryParams)
       const cachedData = this.storage.getCacheData<T>(cacheKey)
       if (cachedData) {
-        this.metrics.cacheHits++
         return cachedData
       }
-      this.metrics.cacheMisses++
     }
 
     // Préparer les headers
@@ -247,11 +233,8 @@ export class HttpClient {
         this.storage.setCacheData(cacheKey, finalResult, cacheTTL)
       }
 
-      this.metrics.successCount++
       return finalResult
     } catch (error) {
-      this.metrics.errorCount++
-
       // Appliquer les interceptors d'erreur
       let finalError = error as Error
       for (const interceptor of this.errorInterceptors) {
@@ -423,34 +406,5 @@ export class HttpClient {
    */
   invalidateCache(pattern: string): void {
     this.storage.invalidate(pattern)
-  }
-
-  // ========================================================================
-  // METRICS
-  // ========================================================================
-
-  /**
-   * Récupère les métriques du client HTTP
-   */
-  getMetrics() {
-    return {
-      ...this.metrics,
-      cacheHitRate:
-        this.metrics.cacheHits / (this.metrics.cacheHits + this.metrics.cacheMisses) || 0,
-      successRate: this.metrics.successCount / this.metrics.requestCount || 0,
-    }
-  }
-
-  /**
-   * Réinitialise les métriques
-   */
-  resetMetrics(): void {
-    this.metrics = {
-      requestCount: 0,
-      successCount: 0,
-      errorCount: 0,
-      cacheHits: 0,
-      cacheMisses: 0,
-    }
   }
 }

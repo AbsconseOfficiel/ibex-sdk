@@ -362,17 +362,6 @@ await sdk.privacy.confirmEmail({ email, code, externalUserId })
 }
 ```
 
-### Métriques
-
-```typescript
-const metrics = sdk.getMetrics()
-console.log({
-  http: metrics.http, // requestCount, successCount, cacheHitRate
-  cache: metrics.cache, // memorySize, hits, misses, hitRate
-  storage: metrics.storage, // memoryEntries, sessionEntries, persistentEntries
-})
-```
-
 ---
 
 ## WebSocket Temps Réel

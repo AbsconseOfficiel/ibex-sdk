@@ -62,21 +62,21 @@ Version révolutionnaire du SDK IBEX avec **refonte complète** de l'architectur
 **Avant (v1.x)** :
 
 ```typescript
-const { signIn, transferEURe, withdraw } = useIbex();
+const { signIn, transferEURe, withdraw } = useIbex()
 ```
 
 **Après (v2.0)** :
 
 ```typescript
-const { signIn, send, sdk } = useIbex();
+const { signIn, send, sdk } = useIbex()
 
 // Usage simple
-await signIn();
-await send(100, '0x...');
+await signIn()
+await send(100, '0x...')
 
 // Usage avancé via SDK
-await sdk.safe.transfer({ safeAddress, to, amount });
-await sdk.privacy.saveUserData(userId, { email });
+await sdk.safe.transfer({ safeAddress, to, amount })
+await sdk.privacy.saveUserData(userId, { email })
 ```
 
 #### Organisation des Fichiers
@@ -122,7 +122,7 @@ src/
 #### Métriques Disponibles
 
 ```typescript
-const metrics = sdk.getMetrics();
+const metrics = sdk.getMetrics()
 // HTTP: requestCount, successRate, cacheHitRate
 // Cache: memorySize, hits, misses, hitRate, evictions
 // Storage: memoryEntries, sessionEntries, persistentEntries
@@ -136,20 +136,20 @@ const metrics = sdk.getMetrics();
 
    ```typescript
    // ❌ v1.x
-   await client.transferEURe(safeAddress, chainId, to, amount);
+   await client.transferEURe(safeAddress, chainId, to, amount)
 
    // ✅ v2.0
-   await client.safe.transfer({ safeAddress, chainId, to, amount });
+   await client.safe.transfer({ safeAddress, chainId, to, amount })
    ```
 
 2. **Imports types** :
 
    ```typescript
    // ❌ v1.x
-   import type { SafeOperation } from '@absconse/ibex-sdk';
+   import type { SafeOperation } from '@absconse/ibex-sdk'
 
    // ✅ v2.0
-   import type { Operation } from '@absconse/ibex-sdk';
+   import type { Operation } from '@absconse/ibex-sdk'
    ```
 
 3. **WebSocket** : Géré automatiquement par le hook, plus d'exposition directe
@@ -162,7 +162,7 @@ Voir [MIGRATION-V2.md](./MIGRATION-V2.md) pour le guide complet.
 
 ```typescript
 // ✅ Code v1.x fonctionne en v2.0
-const { signIn, send } = useIbex();
+const { signIn, send } = useIbex()
 ```
 
 **Actions avancées (nouvelle API)** :
@@ -377,27 +377,27 @@ Contrairement aux solutions traditionnelles qui nécessitent des dizaines de hoo
 
 ```typescript
 // Avant : Complexité extrême
-const { isAuthenticated, isLoading, error } = useAuth();
-const { signUp, signIn, logout, transferEURe, withdrawToIban } = useIbexApi();
-const { user, kyc, wallet } = useAuthData();
+const { isAuthenticated, isLoading, error } = useAuth()
+const { signUp, signIn, logout, transferEURe, withdrawToIban } = useIbexApi()
+const { user, kyc, wallet } = useAuthData()
 const {
   balances,
   loading: balancesLoading,
   error: balancesError,
   refresh: refreshBalances,
-} = useBalances();
+} = useBalances()
 const {
   transactions,
   loading: transactionsLoading,
   error: transactionsError,
   refresh: refreshTransactions,
-} = useTransactions({ limit: 50 });
+} = useTransactions({ limit: 50 })
 const {
   operations,
   loading: operationsLoading,
   error: operationsError,
   refresh: refreshOperations,
-} = useUserOperations();
+} = useUserOperations()
 
 // Après : Simplicité révolutionnaire
 const {
@@ -411,7 +411,7 @@ const {
   send,
   receive,
   withdraw,
-} = useIbex();
+} = useIbex()
 ```
 
 #### Fonctionnalités

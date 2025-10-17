@@ -155,7 +155,6 @@ export {
 // ============================================================================
 
 export { HttpClient } from './core/http'
-export { CacheManager, CACHE_STRATEGIES } from './core/cache'
 export { StorageManager } from './core/StorageManager'
 export { WebSocketService } from './core/websocket'
 
