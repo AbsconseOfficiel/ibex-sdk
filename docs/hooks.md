@@ -26,25 +26,36 @@ Le hook `useIbex()` est un hook React personnalisé qui :
 
 ### Fonctionnalités principales
 
-- **Architecture hybride** : API REST (données initiales) + WebSocket (temps réel)
+- **API simplifiée** : Actions courantes directement accessibles
+- **SDK modulaire** : Accès à toutes les features via `sdk.feature.method()`
 - **Données centralisées** : Utilisateur, transactions, opérations, soldes
-- **Actions simplifiées** : Authentification, transferts, KYC, opérations
-- **Temps réel** : Mises à jour automatiques via WebSocket
-- **Gestion d'état** : Chargement, erreurs, connexion WebSocket
+- **Cache intelligent** : Multi-niveaux avec stratégies optimisées
+- **Temps réel** : WebSocket optimisé avec reconnexion automatique
 
 </td>
 <td width="50%">
 
 ### Révolution de l'API
 
-Traditionnellement, les SDKs financiers nécessitent plusieurs hooks :
+**v1.x** : Un seul hook avec tout mélangé
 
-- `useAuth()` pour l'authentification
-- `useWallet()` pour le portefeuille
-- `useTransactions()` pour les transactions
-- `useBalance()` pour les soldes
+```typescript
+const { signIn, transferEURe, withdraw, startKyc } = useIbex();
+```
 
-L'IBEX SDK révolutionne cette approche avec **un seul hook** qui remplace tout.
+**v2.0** : API simplifiée + SDK modulaire
+
+```typescript
+const { signIn, send, sdk } = useIbex();
+
+// Actions simples
+await signIn();
+await send(100, '0x...');
+
+// Actions avancées via SDK
+await sdk.safe.transfer({ safeAddress, to, amount });
+await sdk.privacy.saveUserData(userId, { email });
+```
 
 </td>
 </tr>

@@ -1,58 +1,53 @@
-# Source files (exclure du package npm)
+# Source files (not needed in published package)
 src/
 example/
+docs/
+scripts/
 
 # Development files
-tsconfig.json
-tsup.config.ts
-.eslintrc.js
-.prettierrc
-.gitignore
-jest.config.js
-tailwind.config.js
-
-# Documentation source (garder seulement README.md)
-docs/
-
-# Test files
-**/*.test.ts
-**/*.test.tsx
-**/*.spec.ts
-**/*.spec.tsx
-__tests__/
-test/
-coverage/
-
-# Development dependencies
-node_modules/
-
-# IDE files
 .vscode/
+.eslintrc.cjs
+tsconfig.json
+vite.config.ts
+tsup.config.ts
+jest.config.js
+inject-license.js
+
+# OpenAPI specification (internal use only)
+openapi.json
+
+# Development dependencies and configs
+package-lock.json
+*.config.js
+*.config.ts
+
+# Documentation (keep only essential)
+!README.md
+!CHANGELOG.md
+!MIGRATION-V2.md
+!LICENSE
+!NOTICE.MD
+!SECURITY.md
+!CODE_OF_CONDUCT.md
+!CONTRIBUTING.md
+
+# Git and development
+.git/
+.gitignore
+.github/
+
+# IDE and editor files
 .idea/
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs and temporary files
 *.log
-logs/
-
-# Environment files
-.env*
-.env.local
-.env.development
-.env.test
-.env.production
-
-# Build artifacts
-*.tsbuildinfo
+tmp/
+temp/
 .cache/
-
-# Temporary files
-*.tmp
-*.temp
-.cursor
-.github
