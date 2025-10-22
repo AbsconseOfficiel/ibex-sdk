@@ -1,6 +1,6 @@
 {
   "name": "@absconse/ibex-sdk",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "SDK IBEX v2.0 - Portefeuille numérique avec WebAuthn et EURe",
   "type": "module",
   "main": "./dist/ibex-sdk.cjs",
@@ -47,12 +47,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/absconse/ibex-sdk.git"
+    "url": "https://github.com/AbsconseOfficiel/ibex-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/absconse/ibex-sdk/issues"
+    "url": "https://github.com/AbsconseOfficiel/ibex-sdk/issues"
   },
-  "homepage": "https://github.com/absconse/ibex-sdk#readme",
+  "homepage": "https://github.com/AbsconseOfficiel/ibex-sdk#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/AbsconseOfficiel"
+  },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"

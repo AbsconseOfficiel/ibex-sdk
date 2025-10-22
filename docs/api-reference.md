@@ -2,7 +2,7 @@
 
 # Référence API IBEX
 
-### Documentation complète du SDK React/TypeScript
+### Documentation du SDK React/TypeScript
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
@@ -27,7 +27,7 @@ npm install @absconse/ibex-sdk
 <tr>
 <td width="50%">
 
-### Ce que fait le SDK
+### Fonctionnalités du SDK
 
 - **Authentification** : WebAuthn/Passkeys avec WebSocket temps réel
 - **Portefeuille** : Gestion des wallets Safe avec mises à jour automatiques
@@ -209,7 +209,7 @@ interface KycStatusInfo {
 | `2`    | Dossier envoyé  | Documents soumis     |
 | `3`    | Manque de pièce | Documents incomplets |
 | `4`    | Refusé          | KYC rejeté           |
-| `5`    | Accepté         | ✅ KYC validé        |
+| `5`    | Accepté         | KYC validé           |
 
 </details>
 
@@ -282,8 +282,8 @@ type OperationType =
 
 type OperationStatus =
   | 'pending' // En attente
-  | 'completed' // ✅ Terminé
-  | 'failed' // ❌ Échoué
+  | 'completed' // Terminé
+  | 'failed' // Échoué
   | 'executed' // Exécutée
 ```
 
@@ -316,9 +316,9 @@ const { signIn, error } = useIbex()
 const handleLogin = async () => {
   try {
     await signIn()
-    // ✅ Utilisateur connecté
+    // Utilisateur connecté
   } catch (err) {
-    // ❌ Erreur gérée automatiquement dans `error`
+    // Erreur gérée automatiquement dans `error`
   }
 }
 

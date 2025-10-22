@@ -2,7 +2,7 @@
 
 # Documentation IBEX SDK
 
-### Guide complet pour intégrer les services IBEX dans vos applications React
+### Guide pour intégrer les services IBEX dans vos applications React
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)](https://reactjs.org/)
@@ -26,10 +26,10 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 
 ### Fonctionnalités principales
 
-- **Authentification WebAuthn** : Plus sécurisé que les mots de passe
+- **Authentification WebAuthn** : Sécurisé avec passkeys
 - **Architecture modulaire** : 8 features isolées (auth, wallet, safe, privacy, etc.)
 - **API simplifiée** : Actions simples via hook + SDK complet
-- **Cache intelligent** : Multi-niveaux avec -90% de requêtes
+- **Cache intelligent** : Multi-niveaux avec réduction des requêtes
 - **Temps réel** : WebSocket optimisé avec reconnexion automatique
 
 </td>
@@ -39,7 +39,7 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 
 - **Simplicité** : API simple pour cas d'usage basiques
 - **Puissance** : SDK complet pour fonctionnalités avancées
-- **Performance** : -90% requêtes API, -70% temps de chargement
+- **Performance** : Réduction des requêtes API et temps de chargement
 - **TypeScript** : Types stricts et autocomplétion complète
 - **Production-ready** : 100% du Swagger IBEX implémenté
 
@@ -118,13 +118,13 @@ function Dashboard() {
 
 - ✅ Application fonctionnelle en quelques lignes
 - ✅ Authentification WebAuthn intégrée
-- ✅ Interface utilisateur moderne
+- Interface utilisateur moderne
 
 ---
 
 ## Guides disponibles
 
-### [Guide de démarrage rapide](./getting-started.md)
+### [Guide de démarrage rapide](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/getting-started.md)
 
 **Pour qui :** Débutants, première intégration
 
@@ -137,7 +137,7 @@ function Dashboard() {
 
 **Temps estimé :** 30 minutes
 
-### [Configuration](./configuration.md)
+### [Configuration](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/configuration.md)
 
 **Pour qui :** Développeurs, configuration avancée
 
@@ -150,7 +150,7 @@ function Dashboard() {
 
 **Temps estimé :** 15 minutes
 
-### [Guide des hooks](./hooks.md)
+### [Guide des hooks](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/hooks.md)
 
 **Pour qui :** Développeurs, utilisation avancée
 
@@ -163,7 +163,7 @@ function Dashboard() {
 
 **Temps estimé :** 20 minutes
 
-### [Exemples pratiques](./examples.md)
+### [Exemples pratiques](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/examples.md)
 
 **Pour qui :** Développeurs, cas d'usage concrets
 
@@ -176,7 +176,7 @@ function Dashboard() {
 
 **Temps estimé :** 45 minutes
 
-### [Authentification](./authentication.md)
+### [Authentification](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/authentication.md)
 
 **Pour qui :** Développeurs, sécurité
 
@@ -189,7 +189,7 @@ function Dashboard() {
 
 **Temps estimé :** 30 minutes
 
-### [Référence API](./api-reference.md)
+### [Référence API](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/api-reference.md)
 
 **Pour qui :** Développeurs, référence technique
 
@@ -202,7 +202,7 @@ function Dashboard() {
 
 **Temps estimé :** 30 minutes
 
-### [FAQ](./faq.md)
+### [FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/faq.md)
 
 **Pour qui :** Tous, dépannage
 
@@ -227,10 +227,10 @@ function Dashboard() {
 
 ### Étapes recommandées
 
-1. **[Démarrage rapide](./getting-started.md)** - Première intégration
-2. **[Configuration](./configuration.md)** - Configuration de base
-3. **[Exemples](./examples.md)** - Composants prêts à l'emploi
-4. **[FAQ](./faq.md)** - Questions fréquentes
+1. **[Démarrage rapide](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/getting-started.md)** - Première intégration
+2. **[Configuration](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/configuration.md)** - Configuration de base
+3. **[Exemples](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/examples.md)** - Composants prêts à l'emploi
+4. **[FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/faq.md)** - Questions fréquentes
 
 </td>
 <td width="50%">
@@ -255,9 +255,9 @@ function Dashboard() {
 
 ### Étapes recommandées
 
-1. **[Hooks](./hooks.md)** - Utilisation avancée
-2. **[Authentification](./authentication.md)** - Sécurité
-3. **[Référence API](./api-reference.md)** - Documentation technique
+1. **[Hooks](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/hooks.md)** - Utilisation avancée
+2. **[Authentification](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/authentication.md)** - Sécurité
+3. **[Référence API](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/api-reference.md)** - Documentation technique
 
 </td>
 <td width="50%">
@@ -282,9 +282,9 @@ function Dashboard() {
 
 ### Étapes recommandées
 
-1. **[Référence API](./api-reference.md)** - Documentation complète
-2. **[Authentification](./authentication.md)** - Sécurité avancée
-3. **[Exemples](./examples.md)** - Implémentations complexes
+1. **[Référence API](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/api-reference.md)** - Documentation complète
+2. **[Authentification](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/authentication.md)** - Sécurité avancée
+3. **[Exemples](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/examples.md)** - Implémentations complexes
 
 </td>
 <td width="50%">
@@ -311,7 +311,7 @@ function Dashboard() {
 <tr>
 <td width="50%">
 
-### 🔧 Outils recommandés
+### Outils recommandés
 
 - **VS Code** : Éditeur avec support TypeScript
 - **React DevTools** : Débogage des composants
@@ -339,9 +339,9 @@ function Dashboard() {
 
 ### Support officiel
 
-- **GitHub Issues** : [Signaler un bug](https://github.com/ibex/sdk/issues)
-- **GitHub Discussions** : [Poser une question](https://github.com/ibex/sdk/discussions)
-- **Documentation** : [docs/](./docs/)
+- **GitHub Issues** : [Signaler un bug](https://github.com/AbsconseOfficiel/ibex-sdk/issues)
+- **GitHub Discussions** : [Poser une question](https://github.com/AbsconseOfficiel/ibex-sdk/discussions)
+- **Documentation** : [docs/](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs)
 
 </td>
 <td width="50%">
@@ -483,7 +483,7 @@ const config = {
 
 ### Obtenir de l'aide
 
-1. **Consultez la [FAQ](./faq.md)** pour les problèmes courants
-2. **Regardez les [exemples](./examples.md)** pour des solutions
-3. **Ouvrez une [issue GitHub](https://github.com/ibex/sdk/issues)** pour les bugs
-4. **Rejoignez les [discussions](https://github.com/ibex/sdk/discussions)** pour les questions
+1. **Consultez la [FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/faq.md)** pour les problèmes courants
+2. **Regardez les [exemples](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/examples.md)** pour des solutions
+3. **Ouvrez une [issue GitHub](https://github.com/AbsconseOfficiel/ibex-sdk/issues)** pour les bugs
+4. **Rejoignez les [discussions](https://github.com/AbsconseOfficiel/ibex-sdk/discussions)** pour les questions

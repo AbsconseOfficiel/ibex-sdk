@@ -2,7 +2,7 @@
 
 # IBEX SDK
 
-### SDK React/TypeScript moderne pour l'intégration des services IBEX
+### SDK React/TypeScript pour l'intégration des services IBEX
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -21,7 +21,7 @@
 
 ## Qu'est-ce que l'IBEX SDK ?
 
-L'IBEX SDK v2.0 est une bibliothèque React/TypeScript **complètement refactorisée** offrant :
+L'IBEX SDK v2.0 est une bibliothèque React/TypeScript qui fournit une interface pour intégrer les services financiers IBEX dans vos applications React.
 
 <table>
 <tr>
@@ -29,7 +29,7 @@ L'IBEX SDK v2.0 est une bibliothèque React/TypeScript **complètement refactori
 
 **Architecture Modulaire**
 
-Features namespaced pour une organisation claire et une DX exceptionnelle.
+Organisation par features avec namespace pour une structure claire.
 
 ```typescript
 await sdk.auth.signIn();
@@ -44,7 +44,7 @@ await sdk.privacy.saveUserData({ ... });
 
 **API Complète**
 
-100% des endpoints OpenAPI implémentés avec types stricts TypeScript.
+Implémentation de tous les endpoints OpenAPI avec types TypeScript.
 
 - ✅ Auth & WebAuthn
 - ✅ Wallets & Addresses
@@ -59,9 +59,9 @@ await sdk.privacy.saveUserData({ ... });
 
 ---
 
-## Nouveautés v2.0 🚀
+## Changements v2.0
 
-### Architecture Révolutionnaire
+### Architecture Modulaire
 
 **Avant (v1.x)** :
 
@@ -86,15 +86,15 @@ await sdk.privacy.saveUserData({ ... });
 await sdk.blockchain.getTransactions({ startDate, endDate });
 ```
 
-### Features Principales
+### Fonctionnalités Principales
 
-- 🏗️ **Architecture modulaire** - 8 features isolées (auth, wallet, safe, transactions, kyc, recovery, privacy, blockchain)
-- ⚡ **Cache multi-niveaux** - Memory + SessionStorage + LocalStorage avec LRU eviction
-- 🔄 **WebSocket optimisé** - Reconnexion intelligente, heartbeat, file d'attente
-- 📦 **Tree-shaking parfait** - Import seulement ce dont vous avez besoin
-- 🎯 **Types stricts** - Générés depuis OpenAPI spec
-- 📖 **JSDoc complet** - Documentation inline avec exemples
-- 🚀 **Performance maximale** - Réduction 90% des requêtes via cache intelligent
+- **Architecture modulaire** - 8 features isolées (auth, wallet, safe, transactions, kyc, recovery, privacy, blockchain)
+- **Cache multi-niveaux** - Memory + SessionStorage + LocalStorage avec LRU eviction
+- **WebSocket optimisé** - Reconnexion intelligente, heartbeat, file d'attente
+- **Tree-shaking** - Import seulement ce dont vous avez besoin
+- **Types stricts** - Générés depuis OpenAPI spec
+- **JSDoc complet** - Documentation inline avec exemples
+- **Performance optimisée** - Réduction des requêtes via cache intelligent
 
 ---
 
@@ -368,12 +368,12 @@ await sdk.privacy.confirmEmail({ email, code, externalUserId })
 
 Mises à jour automatiques pour :
 
-- 💰 Balances
-- 📤 Transactions
-- 📋 Opérations
-- 👤 Données utilisateur
-- ✅ Statut KYC
-- 🏦 Statut IBAN
+- Balances
+- Transactions
+- Opérations
+- Données utilisateur
+- Statut KYC
+- Statut IBAN
 
 ```typescript
 const { isConnected } = useIbex()
@@ -418,25 +418,25 @@ await sdk.privacy.saveUserData({ ... });
 
 ## Documentation
 
-| Guide                                           | Description                          |
-| ----------------------------------------------- | ------------------------------------ |
-| [Guide de démarrage](./docs/getting-started.md) | Installation et première utilisation |
-| [Hook useIbex](./docs/hooks.md)                 | Documentation détaillée du hook      |
-| [Types TypeScript](./docs/types.md)             | Référence complète des types         |
-| [Authentification](./docs/authentication.md)    | Guide WebAuthn et passkeys           |
-| [Configuration](./docs/configuration.md)        | Options de configuration             |
-| [Exemples](./docs/examples.md)                  | Exemples pratiques                   |
-| [FAQ](./docs/faq.md)                            | Questions fréquentes                 |
-| [API Reference](./docs/api-reference.md)        | Documentation technique complète     |
+| Guide                                                                                                | Description                          |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| [Guide de démarrage](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/getting-started.md) | Installation et première utilisation |
+| [Hook useIbex](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/hooks.md)                 | Documentation détaillée du hook      |
+| [Types TypeScript](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/types.md)             | Référence complète des types         |
+| [Authentification](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/authentication.md)    | Guide WebAuthn et passkeys           |
+| [Configuration](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/configuration.md)        | Options de configuration             |
+| [Exemples](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/examples.md)                  | Exemples pratiques                   |
+| [FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/faq.md)                            | Questions fréquentes                 |
+| [API Reference](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/api-reference.md)        | Documentation technique complète     |
 
-## 📚 Exemples d'Utilisation
+## Exemples d'Utilisation
 
-Consultez notre [documentation complète](./docs/) avec des exemples détaillés pour chaque fonctionnalité :
+Consultez notre [documentation complète](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs) avec des exemples détaillés pour chaque fonctionnalité :
 
-- 🔐 [Authentification](./docs/authentication.md) - WebAuthn et gestion des sessions
-- 💰 [Configuration](./docs/configuration.md) - Setup et configuration du SDK
-- 🛠️ [API Reference](./docs/api-reference.md) - Documentation technique complète
-- ❓ [FAQ](./docs/faq.md) - Questions fréquentes et dépannage
+- [Authentification](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/authentication.md) - WebAuthn et gestion des sessions
+- [Configuration](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/configuration.md) - Setup et configuration du SDK
+- [API Reference](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/api-reference.md) - Documentation technique complète
+- [FAQ](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/faq.md) - Questions fréquentes et dépannage
 
 ---
 
@@ -444,7 +444,7 @@ Consultez notre [documentation complète](./docs/) avec des exemples détaillés
 
 | Canal             | Lien                                                                           |
 | ----------------- | ------------------------------------------------------------------------------ |
-| **Documentation** | [docs/](./docs/)                                                               |
+| **Documentation** | [docs/](https://github.com/AbsconseOfficiel/ibex-sdk/tree/main/docs)           |
 | **Issues GitHub** | [Signaler un bug](https://github.com/AbsconseOfficiel/ibex-sdk/issues)         |
 | **Discussions**   | [Poser une question](https://github.com/AbsconseOfficiel/ibex-sdk/discussions) |
 
@@ -452,7 +452,7 @@ Consultez notre [documentation complète](./docs/) avec des exemples détaillés
 
 ## Changelog
 
-Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique des versions.
+Voir [CHANGELOG.md](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/CHANGELOG.md) pour l'historique des versions.
 
 ---
 
@@ -460,11 +460,11 @@ Voir [CHANGELOG.md](./CHANGELOG.md) pour l'historique des versions.
 
 **Prêt à commencer ?**
 
-Suivez notre [guide de démarrage](./docs/getting-started.md) pour intégrer l'IBEX SDK dans votre application en quelques minutes !
+Suivez notre [guide de démarrage](https://github.com/AbsconseOfficiel/ibex-sdk/blob/main/docs/getting-started.md) pour intégrer l'IBEX SDK dans votre application en quelques minutes !
 
 ---
 
-> 🔗 Propulsé par [Dylan Enjolvin](https://github.com/AbsconseOfficiel)  
-> 📄 Sous licence [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+> Propulsé par [Dylan Enjolvin](https://github.com/AbsconseOfficiel)  
+> Sous licence [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 </div>
