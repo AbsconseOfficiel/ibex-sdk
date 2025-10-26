@@ -1,16 +1,16 @@
 {
   "name": "@absconse/ibex-sdk",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "SDK IBEX v2.0 - Portefeuille numérique avec WebAuthn et EURe",
   "type": "module",
-  "main": "./dist/ibex-sdk.cjs",
-  "module": "./dist/ibex-sdk.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/ibex-sdk.js",
-      "require": "./dist/ibex-sdk.cjs"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
