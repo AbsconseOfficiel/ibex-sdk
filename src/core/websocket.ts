@@ -97,11 +97,11 @@ export class WebSocketService {
   private reconnectAttempts = 0
   private maxReconnectAttempts: number
   private reconnectBaseDelay: number
-  private reconnectTimer: NodeJS.Timeout | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   // Heartbeat
   private heartbeatInterval: number
-  private heartbeatTimer: NodeJS.Timeout | null = null
+  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
   private lastHeartbeatResponse = Date.now()
 
   // File d'attente

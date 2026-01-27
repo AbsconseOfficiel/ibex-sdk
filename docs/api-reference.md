@@ -49,7 +49,7 @@ const config = {
   domain: 'votre-app.com',
 }
 
-;<IbexProvider config={config}>
+<IbexProvider config={config}>
   <App />
 </IbexProvider>
 ```
@@ -71,7 +71,7 @@ const config = {
 | `rpId`    | `string`  | ❌     | Identifiant Relying Party (WebAuthn)       |
 | `timeout` | `number`  | ❌     | Timeout des requêtes en ms (défaut: 30000) |
 | `retries` | `number`  | ❌     | Nombre de tentatives (défaut: 3)           |
-| `cache`   | `boolean` | ❌     | Activer le cache (défaut: true)            |
+| `defaultChainId` | `number`  | ❌     | ID de chaîne par défaut (auto-détecté)     |
 
 <details>
 <summary><b>Exemple de configuration complète</b></summary>
@@ -83,7 +83,7 @@ const config: IbexConfig = {
   rpId: 'your-app.com',
   timeout: 30000,
   retries: 3,
-  cache: true,
+  defaultChainId: 421614, // Arbitrum Sepolia (optionnel, auto-détecté)
 }
 ```
 
@@ -102,6 +102,7 @@ const {
   // État
   isLoading, // Chargement en cours
   error, // Message d'erreur (null si OK)
+  isConnected, // État de connexion WebSocket
 
   // Utilisateur
   user, // Données utilisateur (null si non connecté)
@@ -113,30 +114,25 @@ const {
   operations, // Opérations IBEX
 
   // Auth
-  signIn, // Connexion WebAuthn
+  signIn, // Connexion WebAuthn (v1.1 avec options)
   signUp, // Inscription WebAuthn
   logout, // Déconnexion
 
   // Actions
-  send, // Envoyer des fonds
+  send, // Envoyer des fonds (deprecated - utiliser sdk.transferToken)
   receive, // Recevoir des fonds
   withdraw, // Retrait vers IBAN
 
   // KYC
   startKyc, // Démarrer la vérification
-  getKycStatusLabel, // Obtenir le libellé du statut
 
-  // Actions IBEX Safe
-  getUserPrivateData, // Récupérer les données privées
-  saveUserPrivateData, // Sauvegarder les données privées
-  validateEmail, // Valider un email
-  confirmEmail, // Confirmer un email
+  // SDK complet pour fonctionnalités avancées
+  sdk, // Client IBEX complet
 
   // Utilitaires
   refresh, // Rafraîchir les données
   clearError, // Effacer l'erreur
-  getOperationTypeLabel, // Libellé du type d'opération
-  getOperationStatusLabel, // Libellé du statut d'opération
+  reconnectWebSocket, // Reconnecter le WebSocket
 } = useIbex()
 ```
 
@@ -308,11 +304,12 @@ interface Wallet {
 
 ## Authentification
 
-### Connexion avec passkeys
+### Connexion avec passkeys (v1.1)
 
 ```tsx
 const { signIn, error } = useIbex()
 
+// Connexion simple
 const handleLogin = async () => {
   try {
     await signIn()
@@ -322,9 +319,23 @@ const handleLogin = async () => {
   }
 }
 
+// Connexion avec options v1.1
+const handleLoginWithOptions = async () => {
+  try {
+    await signIn({
+      includeBalance: true, // Inclure les balances dans la réponse
+      includeTransactions: true, // Inclure les transactions dans la réponse
+      includeUserdata: true, // Inclure les données utilisateur
+    })
+  } catch (err) {
+    console.error('Erreur:', err)
+  }
+}
+
 return (
   <>
     <button onClick={handleLogin}>Se connecter avec passkey</button>
+    <button onClick={handleLoginWithOptions}>Se connecter avec données</button>
     {error && <Alert variant="error">{error}</Alert>}
   </>
 )
@@ -358,11 +369,22 @@ const { error, clearError } = useIbex()
 
 ### Envoyer des fonds
 
-```tsx
-const { send } = useIbex()
+> **Note:** La méthode `send()` est deprecated. Pour les transferts de tokens ERC20 (y compris EURe), utilisez `sdk.transferToken()` à la place.
 
-// Syntaxe simple
+```tsx
+const { send, sdk, wallet } = useIbex()
+
+// Syntaxe simple (deprecated - utiliser transferToken à la place)
 await send(100, '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+
+// Recommandé: utiliser transferToken
+await sdk.transferToken({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  tokenAddress: '0xEURe...', // Adresse du token EURe
+  to: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+  amount: '100',
+})
 
 // Avec gestion d'erreur
 const handleSend = async (amount: number, recipient: string) => {
@@ -383,12 +405,13 @@ const handleSend = async (amount: number, recipient: string) => {
 ### Recevoir des fonds
 
 ```tsx
-const { receive } = useIbex()
+const { receive, wallet } = useIbex()
 
-// Générer une adresse de réception
+// Obtenir l'adresse de réception (adresse du wallet)
 const handleReceive = async () => {
-  await receive(100) // Montant attendu
-  // Affiche l'adresse à l'utilisateur
+  const address = await receive() // Retourne l'adresse du wallet
+  console.log('Adresse de réception:', address)
+  // Afficher l'adresse à l'utilisateur
 }
 ```
 
@@ -419,6 +442,227 @@ const handleWithdraw = async (amount: number, iban: string) => {
 
 ---
 
+## Opérations Safe avancées (v1.1)
+
+### Transfert de token ERC20
+
+```tsx
+const { sdk, wallet } = useIbex()
+
+const handleTransferToken = async () => {
+  if (!wallet) return
+
+  await sdk.transferToken({
+    safeAddress: wallet.address,
+    chainId: wallet.chainId,
+    tokenAddress: '0x...', // Adresse du token ERC20
+    to: '0x...', // Adresse destinataire
+    amount: '100', // Montant en string
+  })
+}
+```
+
+### Opérations AAVE
+
+```tsx
+const { sdk, wallet } = useIbex()
+
+// Dépôt dans pool AAVE
+const handleAaveSupply = async () => {
+  if (!wallet) return
+
+  await sdk.aaveSupply({
+    safeAddress: wallet.address,
+    chainId: wallet.chainId,
+    amount: '1000',
+    assetTicker: 'EURe', // ou tokenAddress + decimals
+  })
+}
+
+// Retrait de pool AAVE
+const handleAaveWithdraw = async () => {
+  if (!wallet) return
+
+  await sdk.aaveWithdraw({
+    safeAddress: wallet.address,
+    chainId: wallet.chainId,
+    amount: '500',
+    assetTicker: 'EURe',
+  })
+}
+```
+
+### Swap de tokens
+
+```tsx
+const { sdk, wallet } = useIbex()
+
+const handleSwap = async () => {
+  if (!wallet) return
+
+  // 1. Obtenir une quote
+  const quote = await sdk.getSwapQuote({
+    fromToken: '0x...', // Adresse token source
+    toToken: '0x...', // Adresse token destination
+    amount: '100', // Montant à échanger
+    blockchainId: wallet.chainId,
+  })
+
+  // 2. Exécuter le swap
+  await sdk.swapFromQuote({
+    safeAddress: wallet.address,
+    chainId: wallet.chainId,
+    quoteId: quote.quoteId,
+  })
+}
+```
+
+### Batch operations
+
+```tsx
+const { sdk, wallet } = useIbex()
+
+const handleBatch = async () => {
+  if (!wallet) return
+
+  // Exécuter le batch directement (prépare et exécute avec WebAuthn automatique)
+  const result = await sdk.executeBatch({
+    safeAddress: wallet.address,
+    chainId: wallet.chainId,
+    operations: [
+      {
+        type: 'TRANSFER_TOKEN',
+        tokenAddress: '0x...',
+        to: '0x...',
+        amount: '100',
+      },
+      {
+        type: 'AAVE_SUPPLY',
+        amount: '500',
+        assetTicker: 'EURe',
+      },
+    ],
+  })
+
+  // Suivre le statut de l'opération
+  const status = await sdk.getOperationStatus(result.userOpHash)
+  console.log('Statut opération:', status)
+}
+```
+
+### Statut d'opération
+
+```tsx
+const { sdk } = useIbex()
+
+// Récupérer le statut d'une opération
+const checkStatus = async (userOpHash: string) => {
+  const status = await sdk.getOperationStatus(userOpHash)
+  console.log('Statut:', status.status)
+}
+
+// Attendre la confirmation d'une opération
+const waitForConfirmation = async (userOpHash: string) => {
+  const status = await sdk.waitForOperation(userOpHash, {
+    pollInterval: 2000, // Vérifier toutes les 2 secondes
+    timeout: 60000, // Timeout après 60 secondes
+  })
+  console.log('Opération confirmée:', status)
+}
+```
+
+---
+
+## Blockchain (BCReader v1.1)
+
+### Pools AAVE
+
+```tsx
+const { sdk } = useIbex()
+
+// Lister les pools actifs
+const getPools = async (blockchainId: number) => {
+  const pools = await sdk.getPools(blockchainId)
+  console.log('Pools disponibles:', pools.pools)
+}
+
+// Récupérer les balances dans les pools
+const getPoolBalances = async (address: string, blockchainId: number) => {
+  const balances = await sdk.getPoolBalances({
+    address,
+    blockchainId,
+    includeZero: false, // Exclure les positions à zéro
+  })
+  console.log('Positions dans pools:', balances)
+}
+```
+
+### Balances et transactions
+
+```tsx
+const { sdk } = useIbex()
+
+// Balances ERC20
+const getBalances = async (address: string, blockchainId: number) => {
+  const balances = await sdk.getBalances({
+    address,
+    blockchainId,
+  })
+  console.log('Balances:', balances.balances)
+}
+
+// Transactions
+const getTransactions = async (address: string, blockchainId: number) => {
+  const transactions = await sdk.getTransactions({
+    address,
+    blockchainId,
+    limit: 50,
+    page: 1,
+  })
+  console.log('Transactions:', transactions.data)
+}
+```
+
+---
+
+## Users (v1.1)
+
+### Opérations utilisateur
+
+```tsx
+const { sdk } = useIbex()
+
+// Récupérer les opérations groupées par Safe (v1.1)
+const getOperations = async () => {
+  const operations = await sdk.getUserOperations()
+  // Format: { "0x...": [Operation[], ...], "0x...": [Operation[], ...] }
+  Object.entries(operations.data).forEach(([safeAddress, ops]) => {
+    console.log(`Safe ${safeAddress}:`, ops.length, 'opérations')
+  })
+}
+```
+
+---
+
+## Recovery (v1.1)
+
+### Statut de récupération
+
+```tsx
+const { sdk } = useIbex()
+
+const checkRecovery = async (safeAddress: string) => {
+  const status = await sdk.getRecoveryStatus(safeAddress)
+
+  console.log('Recovery enabled:', status.recoveryEnabled)
+  console.log('Pending operations:', status.pending)
+  console.log('Executed operations:', status.executed)
+  console.log('Can execute:', status.canExecute)
+}
+```
+
+---
+
 ## Vérification KYC
 
 ### Démarrer le processus KYC
@@ -441,7 +685,20 @@ return <button onClick={handleKyc}>Vérifier mon identité</button>
 ### Afficher le statut KYC
 
 ```tsx
-const { user, getKycStatusLabel } = useIbex()
+const { user } = useIbex()
+
+// Fonction utilitaire pour obtenir le libellé du statut KYC
+const getKycStatusLabel = (level: number): string => {
+  const labels: Record<number, string> = {
+    0: 'Non démarré',
+    1: 'En cours',
+    2: 'Dossier envoyé',
+    3: 'Document manquant',
+    4: 'Refusé',
+    5: 'Accepté',
+  }
+  return labels[level] || 'Inconnu'
+}
 
 const KycBadge = () => {
   if (!user) return null
@@ -483,7 +740,7 @@ const { balance } = useIbex()
 
 const FormattedBalance = () => (
   <p>
-    {balance.amount.toLocaleString('fr-FR', {
+    {balance.toLocaleString('fr-FR', {
       style: 'currency',
       currency: 'EUR',
     })}
@@ -536,7 +793,7 @@ function Dashboard() {
       <Card>
         <h2>Votre solde</h2>
         <p className="balance">
-          {balance.amount.toLocaleString('fr-FR', {
+          {balance.toLocaleString('fr-FR', {
             style: 'currency',
             currency: 'EUR',
           })}

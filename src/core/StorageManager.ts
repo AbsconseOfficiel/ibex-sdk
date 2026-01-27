@@ -29,7 +29,7 @@ interface StorageConfig {
  */
 export class StorageManager {
   private memoryCache = new Map<string, StorageEntry>()
-  private timers = new Map<string, NodeJS.Timeout>()
+  private timers = new Map<string, ReturnType<typeof setTimeout>>()
   private config: StorageConfig
 
   constructor(config: Partial<StorageConfig> = {}) {

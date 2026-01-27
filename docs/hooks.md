@@ -29,18 +29,18 @@ Le hook `useIbex()` est un hook React personnalisé qui :
 - **API simplifiée** : Actions courantes directement accessibles
 - **SDK modulaire** : Accès au client IBEX complet via `sdk`
 - **Données centralisées** : Utilisateur, transactions, opérations, soldes
-- **Cache intelligent** : Multi-niveaux avec stratégies optimisées
-- **Temps réel** : WebSocket optimisé avec reconnexion automatique
+- **Cache multi-niveaux** : Memory + SessionStorage + LocalStorage
+- **Temps réel** : WebSocket avec reconnexion automatique
 
 </td>
 <td width="50%">
 
-### Révolution de l'API
+### Architecture de l'API
 
 **v1.x** : Un seul hook avec tout mélangé
 
 ```typescript
-const { signIn, transferEURe, withdraw, startKyc } = useIbex()
+const { signIn, send, withdraw, startKyc } = useIbex()
 ```
 
 **v2.0** : API simplifiée + SDK modulaire
@@ -49,12 +49,15 @@ const { signIn, transferEURe, withdraw, startKyc } = useIbex()
 const { signIn, send, sdk } = useIbex()
 
 // Actions simples
-await signIn()
+await signIn({ includeBalance: true })
 await send(100, '0x...')
 
-// Actions avancées via SDK
-await sdk.safe.transfer({ to, amount })
-await sdk.privacy.saveUserData(userId, { email })
+// Actions avancées via SDK (v1.1)
+await sdk.transferToken({ tokenAddress, to, amount })
+await sdk.aaveSupply({ amount, assetTicker: 'EURe' })
+await sdk.swapFromQuote({ quoteId })
+await sdk.executeBatch({ operations: [...] })
+await sdk.getPools(100)
 ```
 
 </td>
@@ -65,7 +68,7 @@ await sdk.privacy.saveUserData(userId, { email })
 
 ## Architecture du SDK
 
-### Flux de données optimisé
+### Flux de données
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -155,35 +158,34 @@ interface IbexData {
   // === ÉTAT DE L'APPLICATION ===
   isLoading: boolean // État de chargement global
   error: string | null // Erreur actuelle
+  isConnected: boolean // État de connexion WebSocket
 
   // === ACTIONS D'AUTHENTIFICATION ===
-  signIn: () => Promise<void> // Connexion
-  signUp: (name?: string) => Promise<void> // Inscription
+  signIn: (options?: SignInOptions) => Promise<void> // Connexion (v1.1 avec options)
+  signUp: (passkeyName?: string) => Promise<void> // Inscription
   logout: () => Promise<void> // Déconnexion
 
   // === ACTIONS FINANCIÈRES ===
   send: (amount: number, to: string) => Promise<void> // Envoyer
   receive: () => Promise<string> // Recevoir
-  withdraw: (amount: number, iban: string) => Promise<void> // Retirer
+  withdraw: (
+    amount: number,
+    iban: string,
+    recipientInfo?: { firstName: string; lastName: string; country: string }
+  ) => Promise<void> // Retirer vers IBAN
 
   // === ACTIONS KYC ===
   startKyc: (language?: string) => Promise<string> // Démarrer KYC
 
-  // === ACTIONS IBEX SAFE ===
-  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>
-  saveUserPrivateData: (
-    externalUserId: string,
-    data: Record<string, any>
-  ) => Promise<{ success: boolean }>
-  validateEmail: (email: string, externalUserId: string) => Promise<any>
-  confirmEmail: (email: string, code: string, externalUserId: string, options?: any) => Promise<any>
-
   // === UTILITAIRES ===
   refresh: () => Promise<void> // Actualiser les données
   clearError: () => void // Effacer les erreurs
-  getKycStatusLabel: (level: number) => string // Libellé statut KYC
-  getOperationTypeLabel: (type: string) => string // Libellé type d'opération
-  getOperationStatusLabel: (status: string) => string // Libellé statut d'opération
+  reconnectWebSocket: () => void // Reconnecter le WebSocket
+
+  // === SDK COMPLET ===
+  sdk: IbexClient // Accès au SDK complet pour fonctionnalités avancées
+  // Note: Les méthodes getUserPrivateData, saveUserPrivateData, validateEmail, confirmEmail
+  // sont disponibles via sdk.privacy.*
 }
 ```
 
@@ -235,7 +237,7 @@ function AuthComponent() {
     <div className="user-info">
       <h2>Bonjour {user.email} !</h2>
       <p>Statut KYC: {user.kyc.status}</p>
-      <p>Portefeuille: {user.wallet?.address}</p>
+      {wallet && <p>Portefeuille: {wallet.address}</p>}
 
       <button onClick={logout} className="btn-danger">
         Se déconnecter
@@ -256,6 +258,35 @@ function AuthComponent() {
 ### Dashboard financier
 
 ```tsx
+// Fonctions utilitaires pour les libellés (non incluses dans le hook)
+const getOperationTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    TRANSFER: 'Transfert',
+    TRANSFER_TOKEN: 'Transfert de token',
+    WITHDRAW: 'Retrait',
+    KYC: 'Vérification KYC',
+    IBAN_CREATE: 'Création IBAN',
+    SIGN_MESSAGE: 'Signature de message',
+    ENABLE_RECOVERY: 'Activation récupération',
+    CANCEL_RECOVERY: 'Annulation récupération',
+    AAVE_SUPPLY: 'Dépôt AAVE',
+    AAVE_WITHDRAW: 'Retrait AAVE',
+    SWAP: 'Échange',
+  }
+  return labels[type] || type
+}
+
+const getOperationStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    pending: 'En attente',
+    completed: 'Terminé',
+    failed: 'Échoué',
+    executed: 'Exécuté',
+    confirmed: 'Confirmé',
+  }
+  return labels[status] || status
+}
+
 function Dashboard() {
   const {
     user,
@@ -269,8 +300,6 @@ function Dashboard() {
     withdraw,
     refresh,
     clearError,
-    getOperationTypeLabel,
-    getOperationStatusLabel,
   } = useIbex()
 
   // Formatage des montants
@@ -388,9 +417,9 @@ function Dashboard() {
 **Points clés :**
 
 - ✅ Dashboard complet avec toutes les fonctionnalités
-- ✅ Formatage intelligent des données
+- ✅ Formatage des données
 - ✅ Actions financières intégrées
-- ✅ Interface utilisateur moderne
+- ✅ Support des nouvelles fonctionnalités v1.1
 
 ---
 
@@ -542,6 +571,67 @@ const handleRefresh = async () => {
 
 ---
 
+## Nouvelles fonctionnalités v1.1 via SDK
+
+### Accès au SDK complet
+
+Toutes les nouvelles fonctionnalités OpenAPI v1.1 sont accessibles via `sdk` :
+
+```typescript
+const { sdk, wallet } = useIbex()
+
+// Transfert de token ERC20
+await sdk.transferToken({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  tokenAddress: '0x...',
+  to: '0x...',
+  amount: '100',
+})
+
+// Opérations AAVE
+await sdk.aaveSupply({ safeAddress, chainId, amount, assetTicker: 'EURe' })
+await sdk.aaveWithdraw({ safeAddress, chainId, amount, assetTicker: 'EURe' })
+
+// Swap
+const quote = await sdk.getSwapQuote({ fromToken, toToken, amount, blockchainId })
+await sdk.swapFromQuote({ safeAddress, chainId, quoteId })
+
+// Batch operations (prépare et exécute automatiquement avec WebAuthn)
+const result = await sdk.executeBatch({ safeAddress, chainId, operations: [...] })
+const status = await sdk.getOperationStatus(result.userOpHash)
+
+// Statut d'opération
+const opStatus = await sdk.getOperationStatus(userOpHash)
+await sdk.waitForOperation(userOpHash, { pollInterval: 2000, timeout: 60000 })
+
+// Pools AAVE
+const pools = await sdk.getPools(blockchainId)
+const poolBalances = await sdk.getPoolBalances({ address, blockchainId })
+
+// Users v1.1
+const operations = await sdk.getUserOperations() // Groupé par Safe
+
+// Recovery v1.1
+const recoveryStatus = await sdk.getRecoveryStatus(safeAddress)
+// Inclut pending[] et executed[]
+```
+
+### SignIn avec options v1.1
+
+```typescript
+const { signIn } = useIbex()
+
+// Connexion avec données supplémentaires
+await signIn({
+  includeBalance: true, // Inclure les balances
+  includeTransactions: true, // Inclure les transactions
+  includeUserdata: true, // Inclure les données utilisateur
+})
+```
+
+---
+
 ## Bonnes pratiques
 
 ### 1. Destructuration sélective
@@ -571,27 +661,7 @@ function BalanceDisplay() {
 
 ```typescript
 function BalanceDisplay() {
-  const {
-    balance,
-    isLoading,
-    user,
-    transactions,
-    operations,
-    send,
-    receive,
-    withdraw,
-    signIn,
-    signUp,
-    logout,
-    refresh,
-    clearError,
-    startKyc,
-    getUserPrivateData,
-    saveUserPrivateData,
-    validateEmail,
-    confirmEmail,
-    getKycStatusLabel,
-  } = useIbex()
+  const { balance, isLoading } = useIbex()
 
   // Utilise seulement balance et isLoading...
 }

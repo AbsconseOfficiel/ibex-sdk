@@ -52,7 +52,7 @@ type ErrorInterceptor = (error: Error) => Error | Promise<Error>
 // ============================================================================
 
 /**
- * Client HTTP moderne avec fonctionnalités avancées
+ * Client HTTP avec fonctionnalités avancées
  */
 export class HttpClient {
   private config: IbexConfig
@@ -406,5 +406,23 @@ export class HttpClient {
    */
   invalidateCache(pattern: string): void {
     this.storage.invalidate(pattern)
+  }
+
+  /**
+   * Invalide le cache pour un endpoint spécifique
+   * Utile pour invalider le cache d'un endpoint précis après une mutation
+   * 
+   * @param endpoint - L'endpoint à invalider (ex: '/v1/ibexsafe/userdata/external/user-123')
+   * @param queryParams - Paramètres de requête optionnels
+   * 
+   * @example
+   * ```typescript
+   * // Invalider après sauvegarde de données utilisateur
+   * this.http.invalidateCacheByEndpoint(`/v1/ibexsafe/userdata/external/${userId}`)
+   * ```
+   */
+  invalidateCacheByEndpoint(endpoint: string, queryParams?: Record<string, unknown>): void {
+    const cacheKey = this.generateCacheKey(endpoint, queryParams)
+    this.storage.delete(cacheKey)
   }
 }

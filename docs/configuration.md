@@ -28,7 +28,7 @@ L'IBEX SDK suit le principe du **"Zero Configuration"** :
 
 - **Seuls les paramètres essentiels** sont requis
 - **Auto-détection** des paramètres selon l'environnement
-- **Intelligence** adaptative du SDK
+- **Configuration adaptative** du SDK
 
 </td>
 <td width="50%">
@@ -39,7 +39,7 @@ L'IBEX SDK suit le principe du **"Zero Configuration"** :
 const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
-};
+}
 ```
 
 **C'est tout !**
@@ -62,19 +62,19 @@ const config = {
 ### Configuration minimale complète
 
 ```typescript
-import { IbexProvider } from '@absconse/ibex-sdk';
+import { IbexProvider } from '@absconse/ibex-sdk'
 
 const config = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'votre-domaine.com',
-};
+}
 
 function App() {
   return (
     <IbexProvider config={config}>
       <YourApp />
     </IbexProvider>
-  );
+  )
 }
 ```
 
@@ -108,10 +108,8 @@ const config = {
   rpId: 'votre-domaine.com', // Auto-déduit si non spécifié
   timeout: 30000, // 30 secondes
   retries: 3, // 3 tentatives
-  retryDelay: 1000, // 1 seconde entre tentatives
-  debug: process.env.NODE_ENV === 'development',
-  defaultChainId: 1, // Ethereum mainnet
-};
+  defaultChainId: 1, // Ethereum mainnet (optionnel, auto-détecté)
+}
 ```
 
 **Fonctionnalités WebSocket automatiques :**
@@ -135,7 +133,7 @@ const config = {
 
 ```typescript
 // src/config/ibex.ts
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV === 'development'
 
 export const IBEX_CONFIG = {
   baseURL: isDevelopment
@@ -145,7 +143,7 @@ export const IBEX_CONFIG = {
     ? 'localhost' // Domaine local
     : 'votre-domaine.com', // Domaine de production
   debug: isDevelopment, // Logs en développement
-};
+}
 ```
 
 ### Testnet
@@ -156,7 +154,7 @@ export const IBEX_CONFIG = {
   domain: 'test.votre-domaine.com',
   debug: true,
   timeout: 60000, // Timeout plus long pour les tests
-};
+}
 ```
 
 ### Production
@@ -168,7 +166,7 @@ export const IBEX_CONFIG = {
   debug: false,
   timeout: 30000,
   retries: 3,
-};
+}
 ```
 
 ### Staging
@@ -179,12 +177,12 @@ export const IBEX_CONFIG = {
   domain: 'staging.votre-domaine.com',
   debug: false,
   timeout: 45000,
-};
+}
 ```
 
 ---
 
-## Auto-détection intelligente
+## Auto-détection
 
 ### Détection automatique
 
@@ -197,11 +195,11 @@ export const IBEX_CONFIG = {
 ```typescript
 // Détection automatique
 if (baseURL.includes('localhost')) {
-  defaultChainId = 31337; // Hardhat local
+  defaultChainId = 31337 // Hardhat local
 } else if (baseURL.includes('testnet')) {
-  defaultChainId = 11155111; // Sepolia testnet
+  defaultChainId = 11155111 // Sepolia testnet
 } else {
-  defaultChainId = 1; // Ethereum mainnet
+  defaultChainId = 1 // Ethereum mainnet
 }
 ```
 
@@ -212,7 +210,7 @@ if (baseURL.includes('localhost')) {
 
 ```typescript
 // Auto-déduction
-rpId = domain; // 'votre-domaine.com' → rpId: 'votre-domaine.com'
+rpId = domain // 'votre-domaine.com' → rpId: 'votre-domaine.com'
 ```
 
 </td>
@@ -223,15 +221,15 @@ rpId = domain; // 'votre-domaine.com' → rpId: 'votre-domaine.com'
 
 ```typescript
 // Détection automatique de l'environnement
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = process.env.NODE_ENV === 'development'
+const isProduction = process.env.NODE_ENV === 'production'
 ```
 
 **Avantages :**
 
 - ✅ Configuration automatique selon l'URL
 - ✅ Moins d'erreurs de configuration
-- ✅ Adaptation intelligente
+- ✅ Adaptation automatique
 
 ---
 
@@ -247,7 +245,7 @@ export const IBEX_CONFIG = {
   debug: process.env.NODE_ENV === 'development',
   timeout: parseInt(process.env.REACT_APP_IBEX_TIMEOUT || '30000'),
   retries: parseInt(process.env.REACT_APP_IBEX_RETRIES || '3'),
-};
+}
 ```
 
 ### Fichiers d'environnement
@@ -273,14 +271,14 @@ REACT_APP_IBEX_DEBUG=true
 ```typescript
 // Configuration basée sur la détection du domaine
 function getConfig() {
-  const hostname = window.location.hostname;
+  const hostname = window.location.hostname
 
   if (hostname === 'localhost') {
     return {
       baseURL: 'http://localhost:3001/api',
       domain: 'localhost',
       debug: true,
-    };
+    }
   }
 
   if (hostname.includes('staging')) {
@@ -288,17 +286,17 @@ function getConfig() {
       baseURL: 'https://api-staging.ibexwallet.org',
       domain: hostname,
       debug: false,
-    };
+    }
   }
 
   return {
     baseURL: 'https://api.ibexwallet.org',
     domain: hostname,
     debug: false,
-  };
+  }
 }
 
-const config = getConfig();
+const config = getConfig()
 ```
 
 ### Configuration avec validation
@@ -306,24 +304,24 @@ const config = getConfig();
 ```typescript
 // src/config/ibex.ts
 interface IbexConfig {
-  baseURL: string;
-  domain: string;
-  timeout?: number;
-  retries?: number;
-  debug?: boolean;
+  baseURL: string
+  domain: string
+  timeout?: number
+  retries?: number
+  debug?: boolean
 }
 
 function validateConfig(config: any): IbexConfig {
   if (!config.baseURL) {
-    throw new Error('baseURL est requis');
+    throw new Error('baseURL est requis')
   }
 
   if (!config.domain) {
-    throw new Error('domain est requis');
+    throw new Error('domain est requis')
   }
 
   if (!config.baseURL.startsWith('https://') && !config.baseURL.includes('localhost')) {
-    console.warn('baseURL devrait utiliser HTTPS en production');
+    console.warn('baseURL devrait utiliser HTTPS en production')
   }
 
   return {
@@ -332,7 +330,7 @@ function validateConfig(config: any): IbexConfig {
     timeout: config.timeout || 30000,
     retries: config.retries || 3,
     debug: config.debug || false,
-  };
+  }
 }
 
 export const IBEX_CONFIG = validateConfig({
@@ -341,7 +339,7 @@ export const IBEX_CONFIG = validateConfig({
   timeout: process.env.REACT_APP_IBEX_TIMEOUT,
   retries: process.env.REACT_APP_IBEX_RETRIES,
   debug: process.env.NODE_ENV === 'development',
-});
+})
 ```
 
 ---
@@ -351,15 +349,15 @@ export const IBEX_CONFIG = validateConfig({
 ### Utilisation basique
 
 ```typescript
-import { IbexProvider } from '@absconse/ibex-sdk';
-import { IBEX_CONFIG } from './config/ibex';
+import { IbexProvider } from '@absconse/ibex-sdk'
+import { IBEX_CONFIG } from './config/ibex'
 
 function App() {
   return (
     <IbexProvider config={IBEX_CONFIG}>
       <YourApp />
     </IbexProvider>
-  );
+  )
 }
 ```
 
@@ -367,18 +365,18 @@ function App() {
 
 ```typescript
 function App() {
-  const [configError, setConfigError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null)
 
   useEffect(() => {
     try {
       // Validation de la configuration
       if (!IBEX_CONFIG.baseURL || !IBEX_CONFIG.domain) {
-        throw new Error('Configuration IBEX incomplète');
+        throw new Error('Configuration IBEX incomplète')
       }
     } catch (error) {
-      setConfigError(error.message);
+      setConfigError(error.message)
     }
-  }, []);
+  }, [])
 
   if (configError) {
     return (
@@ -387,14 +385,14 @@ function App() {
         <p>{configError}</p>
         <p>Vérifiez votre fichier de configuration.</p>
       </div>
-    );
+    )
   }
 
   return (
     <IbexProvider config={IBEX_CONFIG}>
       <YourApp />
     </IbexProvider>
-  );
+  )
 }
 ```
 
@@ -402,37 +400,37 @@ function App() {
 
 ```typescript
 function App() {
-  const [config, setConfig] = useState(null);
+  const [config, setConfig] = useState(null)
 
   useEffect(() => {
     // Chargement de la configuration
     const loadConfig = async () => {
       try {
-        const response = await fetch('/api/config');
-        const configData = await response.json();
-        setConfig(configData);
+        const response = await fetch('/api/config')
+        const configData = await response.json()
+        setConfig(configData)
       } catch (error) {
-        console.error('Erreur de chargement de la configuration:', error);
+        console.error('Erreur de chargement de la configuration:', error)
         // Configuration de fallback
         setConfig({
           baseURL: 'https://api.ibexwallet.org',
           domain: window.location.hostname,
-        });
+        })
       }
-    };
+    }
 
-    loadConfig();
-  }, []);
+    loadConfig()
+  }, [])
 
   if (!config) {
-    return <div>Chargement de la configuration...</div>;
+    return <div>Chargement de la configuration...</div>
   }
 
   return (
     <IbexProvider config={config}>
       <YourApp />
     </IbexProvider>
-  );
+  )
 }
 ```
 
@@ -445,42 +443,42 @@ function App() {
 ```typescript
 // src/utils/config-validator.ts
 interface ConfigValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
+  isValid: boolean
+  errors: string[]
+  warnings: string[]
 }
 
 export function validateIbexConfig(config: any): ConfigValidationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
+  const errors: string[] = []
+  const warnings: string[] = []
 
   // Validation des paramètres requis
   if (!config.baseURL) {
-    errors.push('baseURL est requis');
+    errors.push('baseURL est requis')
   } else {
     if (!config.baseURL.startsWith('https://') && !config.baseURL.includes('localhost')) {
-      warnings.push('baseURL devrait utiliser HTTPS en production');
+      warnings.push('baseURL devrait utiliser HTTPS en production')
     }
   }
 
   if (!config.domain) {
-    errors.push('domain est requis');
+    errors.push('domain est requis')
   }
 
   // Validation des paramètres optionnels
   if (config.timeout && (typeof config.timeout !== 'number' || config.timeout < 1000)) {
-    errors.push('timeout doit être un nombre supérieur à 1000ms');
+    errors.push('timeout doit être un nombre supérieur à 1000ms')
   }
 
   if (config.retries && (typeof config.retries !== 'number' || config.retries < 0)) {
-    errors.push('retries doit être un nombre positif');
+    errors.push('retries doit être un nombre positif')
   }
 
   return {
     isValid: errors.length === 0,
     errors,
     warnings,
-  };
+  }
 }
 ```
 
@@ -489,8 +487,8 @@ export function validateIbexConfig(config: any): ConfigValidationResult {
 ```typescript
 // src/components/ConfigError.tsx
 interface ConfigErrorProps {
-  errors: string[];
-  warnings: string[];
+  errors: string[]
+  warnings: string[]
 }
 
 function ConfigError({ errors, warnings }: ConfigErrorProps) {
@@ -531,7 +529,7 @@ function ConfigError({ errors, warnings }: ConfigErrorProps) {
         </p>
       </div>
     </div>
-  );
+  )
 }
 ```
 
@@ -559,7 +557,7 @@ const config = {
     domain: 'votre-domaine.com',
     debug: false,
   },
-};
+}
 ```
 
 </td>
@@ -572,7 +570,7 @@ const badConfig = {
   baseURL: 'https://api.ibexwallet.org',
   domain: 'localhost', // Mélange production/développement
   debug: true,
-};
+}
 ```
 
 </td>
@@ -590,7 +588,7 @@ const badConfig = {
 ```typescript
 function createConfig(config: any): IbexConfig {
   if (!config.baseURL || !config.domain) {
-    throw new Error('Configuration IBEX invalide');
+    throw new Error('Configuration IBEX invalide')
   }
 
   return {
@@ -599,7 +597,7 @@ function createConfig(config: any): IbexConfig {
     timeout: config.timeout || 30000,
     retries: config.retries || 3,
     debug: config.debug || false,
-  };
+  }
 }
 ```
 
@@ -609,7 +607,7 @@ function createConfig(config: any): IbexConfig {
 ### ❌ Éviter - Configuration sans validation
 
 ```typescript
-const badConfig = config; // Pas de validation
+const badConfig = config // Pas de validation
 ```
 
 </td>
@@ -626,12 +624,12 @@ const badConfig = config; // Pas de validation
 
 ```typescript
 try {
-  const config = createConfig(process.env);
-  <IbexProvider config={config}>
+  const config = createConfig(process.env)
+  ;<IbexProvider config={config}>
     <App />
-  </IbexProvider>;
+  </IbexProvider>
 } catch (error) {
-  return <ConfigError error={error.message} />;
+  return <ConfigError error={error.message} />
 }
 ```
 

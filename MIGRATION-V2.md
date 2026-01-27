@@ -2,7 +2,7 @@
 
 ## Vue d'ensemble
 
-IBEX SDK v2.0 introduit une **refactorisation majeure** avec une architecture modulaire par features, tout en conservant une API simple et rétrocompatible pour les cas d'usage de base.
+IBEX SDK v2.0 introduit une refactorisation avec une architecture modulaire par features, tout en conservant une API simple et rétrocompatible pour les cas d'usage de base.
 
 ## Changements Majeurs
 
@@ -28,9 +28,9 @@ src/
 src/
 ├── core/
 │   ├── client.ts        # Client SDK principal
-│   ├── http.ts          # Client HTTP optimisé
-│   ├── cache.ts         # Cache multi-niveaux
-│   ├── websocket.ts     # WebSocket optimisé
+│   ├── http.ts          # Client HTTP
+│   ├── StorageManager.ts # Cache multi-niveaux
+│   ├── websocket.ts     # WebSocket
 │   └── storage.ts       # Storage unifié
 ├── features/            # Features modulaires
 │   ├── auth/
@@ -104,7 +104,7 @@ CACHE_STRATEGIES = {
 }
 ```
 
-### 4. WebSocket Optimisé
+### 4. WebSocket
 
 **v1.x** :
 
@@ -308,7 +308,7 @@ Toutes les features du Swagger IBEX sont maintenant implémentées :
 - ✅ **Privacy** : userData, validateEmail, confirmEmail
 - ✅ **Blockchain** : balances, transactions (BCReader)
 
-### 2. Cache Intelligent
+### 2. Cache Multi-Niveaux
 
 ```typescript
 // Stratégies automatiques par type
@@ -373,7 +373,7 @@ import type {
 ### Après (v2.0)
 
 - Cache multi-niveaux avec LRU
-- WebSocket optimisé avec queue
+- WebSocket avec queue
 - **~10 requêtes API** pour la même session (-90%)
 - **Temps de chargement réduit de 70%**
 
@@ -415,6 +415,166 @@ import type {
    const { isConnected } = useIbex()
    ```
 
+## Migration vers OpenAPI v1.1
+
+### Changements de format
+
+#### UserOperationsResponse
+
+**Avant (v1.0)** :
+
+```typescript
+interface UserOperationsResponse {
+  data: UserOperation[] // Array simple
+}
+
+const operations = await sdk.getUserOperations()
+operations.data.forEach(op => { ... })
+```
+
+**Après (v1.1)** :
+
+```typescript
+interface UserOperationsResponse {
+  data: Record<string, UserOperation[]> // Groupé par Safe address
+}
+
+const operations = await sdk.getUserOperations()
+// Format: { "0x...": [Operation[], ...], "0x...": [Operation[], ...] }
+Object.entries(operations.data).forEach(([safeAddress, ops]) => {
+  ops.forEach(op => { ... })
+})
+```
+
+#### RecoveryStatusResponse
+
+**Avant (v1.0)** :
+
+```typescript
+interface RecoveryStatusResponse {
+  safeAddress: string
+  recoveryEnabled: boolean
+  // ... autres champs
+}
+```
+
+**Après (v1.1)** :
+
+```typescript
+interface RecoveryStatusResponse {
+  safeAddress: string
+  recoveryEnabled: boolean
+  pending: RecoveryOperation[] // Nouveau
+  executed: RecoveryOperation[] // Nouveau
+  // ... autres champs
+}
+```
+
+### Nouvelles fonctionnalités
+
+#### Transfert de token ERC20
+
+```typescript
+// ❌ Ancien (deprecated)
+await sdk.safe.transfer({ safeAddress, to, amount })
+
+// ✅ Nouveau (v1.1)
+await sdk.transferToken({
+  safeAddress,
+  chainId,
+  tokenAddress: '0x...', // Adresse du token ERC20
+  to,
+  amount: '100',
+})
+```
+
+#### Opérations AAVE
+
+```typescript
+// Dépôt
+await sdk.aaveSupply({
+  safeAddress,
+  chainId,
+  amount: '1000',
+  assetTicker: 'EURe',
+})
+
+// Retrait
+await sdk.aaveWithdraw({
+  safeAddress,
+  chainId,
+  amount: '500',
+  assetTicker: 'EURe',
+})
+```
+
+#### Swap
+
+```typescript
+// 1. Obtenir quote
+const quote = await sdk.getSwapQuote({
+  fromToken: '0x...',
+  toToken: '0x...',
+  amount: '100',
+  blockchainId: 100,
+})
+
+// 2. Exécuter swap
+await sdk.swapFromQuote({
+  safeAddress,
+  chainId,
+  quoteId: quote.quoteId,
+})
+```
+
+#### Batch operations
+
+```typescript
+// Préparer batch
+const batch = await sdk.prepareBatch({
+  safeAddress,
+  chainId,
+  operations: [
+    { type: 'TRANSFER_TOKEN', ... },
+    { type: 'AAVE_SUPPLY', ... },
+  ],
+})
+
+// Exécuter batch
+await sdk.executeBatch(batch)
+
+// Suivre statut
+const status = await sdk.getBatchStatus(batch.batchId)
+```
+
+#### Pools AAVE
+
+```typescript
+// Lister pools
+const pools = await sdk.getPools(blockchainId)
+
+// Balances dans pools
+const poolBalances = await sdk.getPoolBalances({
+  address,
+  blockchainId,
+  includeZero: false,
+})
+```
+
+#### SignIn avec options
+
+```typescript
+// ❌ Ancien
+await signIn()
+
+// ✅ Nouveau (v1.1)
+await signIn({
+  includeBalance: true,
+  includeTransactions: true,
+  includeUserdata: true,
+})
+```
+
 ## Checklist de Migration
 
 - [ ] Mettre à jour `@absconse/ibex-sdk` vers `^2.0.0`
@@ -435,4 +595,4 @@ Pour toute question sur la migration :
 
 ---
 
-**Bonne migration vers v2.0 !** 🚀
+**Bonne migration vers v2.0 et OpenAPI v1.1 !**

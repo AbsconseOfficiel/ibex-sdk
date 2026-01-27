@@ -37,19 +37,19 @@ L'IBEX SDK est entièrement écrit en TypeScript pour offrir une expérience de 
 ### Utilisation
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function MyComponent() {
-  const { user, balance, send } = useIbex();
+  const { user, balance, send } = useIbex()
 
   // TypeScript connaît tous les types
   if (user) {
-    console.log(user.email); // ✅ Autocomplétion
-    console.log(user.kyc.status); // ✅ Types stricts
+    console.log(user.email) // ✅ Autocomplétion
+    console.log(user.kyc.status) // ✅ Types stricts
   }
 
   // Validation des paramètres
-  send(100, '0x...'); // ✅ Validation des types
+  send(100, '0x...') // ✅ Validation des types
 }
 ```
 
@@ -65,19 +65,19 @@ function MyComponent() {
 
 ```typescript
 interface User {
-  id: string;
-  email: string | null; // null si KYC non fait
+  id: string
+  email: string | null // null si KYC non fait
   kyc: {
-    status: 'pending' | 'verified' | 'rejected';
-    level: number;
-    updatedAt?: string;
-  };
+    status: 'pending' | 'verified' | 'rejected'
+    level: number
+    updatedAt?: string
+  }
   iban?: {
-    status: 'pending' | 'verified' | 'rejected';
-    iban?: string;
-    bic?: string;
-    updatedAt?: string;
-  };
+    status: 'pending' | 'verified' | 'rejected'
+    iban?: string
+    bic?: string
+    updatedAt?: string
+  }
 }
 ```
 
@@ -93,27 +93,27 @@ interface User {
 
 ```typescript
 interface Wallet {
-  address: string;
-  isConnected: boolean;
-  chainId: number;
+  address: string
+  isConnected: boolean
+  chainId: number
 }
 ```
 
 **Propriétés :**
 
 - `address` : Adresse du portefeuille
-- `isConnected` : État de connexion du portefeuille
+- `isConnected` : État de connexion WebSocket (dans le hook useIbex)
 - `chainId` : Identifiant de la chaîne blockchain
 
 ### Types de statut KYC
 
 ```typescript
-type KycStatus = 'pending' | 'verified' | 'rejected';
+type KycStatus = 'pending' | 'verified' | 'rejected'
 
 interface KycInfo {
-  status: KycStatus;
-  level: number;
-  label: string;
+  status: KycStatus
+  level: number
+  label: string
 }
 ```
 
@@ -141,37 +141,37 @@ type WebSocketMessage =
   | { type: 'balance_update'; data: BalanceUpdateData }
   | { type: 'new_transaction'; data: TransactionData }
   | { type: 'operation_update'; data: OperationData }
-  | { type: 'new_operation'; data: OperationData };
+  | { type: 'new_operation'; data: OperationData }
 
 // Types de données WebSocket
 interface AuthSuccessData {
-  safeAddress: string;
-  message: string;
+  safeAddress: string
+  message: string
 }
 
 interface BalanceData {
-  balance: number;
-  symbol: string;
-  usdValue?: number;
+  balance: number
+  symbol: string
+  usdValue?: number
 }
 
 interface TransactionData {
-  transactions: Transaction[];
+  transactions: Transaction[]
 }
 
 interface UserData {
-  user: User;
-  wallet: Wallet;
+  user: User
+  wallet: Wallet
 }
 
 interface BalanceUpdateData {
-  balance: number;
-  symbol: string;
-  usdValue?: number;
+  balance: number
+  symbol: string
+  usdValue?: number
 }
 
 interface OperationData {
-  operations: Operation[];
+  operations: Operation[]
 }
 ```
 
@@ -179,16 +179,16 @@ interface OperationData {
 
 ```typescript
 interface WebSocketCallbacks {
-  onAuthSuccess: (data: AuthSuccessData) => void;
-  onBalanceUpdate: (data: BalanceUpdateData) => void;
-  onTransactionData: (data: TransactionData) => void;
-  onNewTransaction: (data: TransactionData) => void;
-  onUserData: (data: UserData) => void;
-  onOperationData: (data: OperationData) => void;
-  onOperationUpdate: (data: OperationData) => void;
-  onNewOperation: (data: OperationData) => void;
-  onConnectionChange: (connected: boolean) => void;
-  onError: (error: string) => void;
+  onAuthSuccess: (data: AuthSuccessData) => void
+  onBalanceUpdate: (data: BalanceUpdateData) => void
+  onTransactionData: (data: TransactionData) => void
+  onNewTransaction: (data: TransactionData) => void
+  onUserData: (data: UserData) => void
+  onOperationData: (data: OperationData) => void
+  onOperationUpdate: (data: OperationData) => void
+  onNewOperation: (data: OperationData) => void
+  onConnectionChange: (connected: boolean) => void
+  onError: (error: string) => void
 }
 ```
 
@@ -200,14 +200,14 @@ interface WebSocketCallbacks {
 
 ```typescript
 interface Transaction {
-  id: string;
-  amount: number;
-  type: 'IN' | 'OUT';
-  status: 'confirmed' | 'pending' | 'failed';
-  date: string;
-  hash: string;
-  from: string;
-  to: string;
+  id: string
+  amount: number
+  type: 'IN' | 'OUT'
+  status: 'confirmed' | 'pending' | 'failed'
+  date: string
+  hash: string
+  from: string
+  to: string
 }
 ```
 
@@ -226,7 +226,7 @@ interface Transaction {
 
 ```typescript
 interface Operation {
-  id: string;
+  id: string
   type:
     | 'TRANSFER'
     | 'WITHDRAW'
@@ -234,14 +234,14 @@ interface Operation {
     | 'IBAN_CREATE'
     | 'SIGN_MESSAGE'
     | 'ENABLE_RECOVERY'
-    | 'CANCEL_RECOVERY';
-  status: 'pending' | 'completed' | 'failed' | 'executed';
-  amount?: number;
-  createdAt: string;
+    | 'CANCEL_RECOVERY'
+  status: 'pending' | 'completed' | 'failed' | 'executed'
+  amount?: number
+  createdAt: string
   safeOperation?: {
-    userOpHash?: string;
-    status?: string;
-  };
+    userOpHash?: string
+    status?: string
+  }
 }
 ```
 
@@ -257,16 +257,225 @@ interface Operation {
 ### Types de statut
 
 ```typescript
-type TransactionStatus = 'confirmed' | 'pending' | 'failed';
-type OperationStatus = 'pending' | 'completed' | 'failed' | 'executed';
+type TransactionStatus = 'confirmed' | 'pending' | 'failed'
+type OperationStatus = 'pending' | 'completed' | 'failed' | 'executed'
 type OperationType =
-  | 'TRANSFER'
+  | 'TRANSFER' // @deprecated - Utiliser TRANSFER_TOKEN
+  | 'TRANSFER_TOKEN' // Transfert générique ERC20
   | 'WITHDRAW'
   | 'KYC'
   | 'IBAN_CREATE'
   | 'SIGN_MESSAGE'
   | 'ENABLE_RECOVERY'
-  | 'CANCEL_RECOVERY';
+  | 'CANCEL_RECOVERY'
+  | 'AAVE_SUPPLY' // Dépôt dans pool AAVE
+  | 'AAVE_WITHDRAW' // Retrait de pool AAVE
+  | 'SWAP_FROM_QUOTE' // Exécution de swap depuis quote
+```
+
+---
+
+## Types v1.1
+
+### SignInOptions
+
+```typescript
+interface SignInOptions {
+  includeBalance?: boolean // Inclure les balances dans la réponse
+  includeTransactions?: boolean // Inclure les transactions dans la réponse
+  includeUserdata?: boolean // Inclure les données utilisateur
+}
+```
+
+### SignUpOptions
+
+```typescript
+interface SignUpOptions {
+  keyName?: string // Nom du passkey
+  keyDisplayName?: string // Nom d'affichage
+  chainIds?: number[] // Chain IDs supportés
+}
+```
+
+### TransferTokenParams
+
+```typescript
+interface TransferTokenParams {
+  safeAddress: string
+  chainId?: number
+  tokenAddress: string // Adresse du token ERC20
+  to: string // Adresse destinataire
+  amount: string // Montant en string
+}
+```
+
+### AaveSupplyParams
+
+```typescript
+interface AaveSupplyParams {
+  safeAddress: string
+  chainId?: number
+  amount: string
+  assetTicker?: string // Ex: 'EURe'
+  tokenAddress?: string // Ou adresse token + decimals
+  decimals?: number
+}
+```
+
+### AaveWithdrawParams
+
+```typescript
+interface AaveWithdrawParams {
+  safeAddress: string
+  chainId?: number
+  amount: string
+  assetTicker?: string
+  tokenAddress?: string
+}
+```
+
+### SwapFromQuoteParams
+
+```typescript
+interface SwapFromQuoteParams {
+  safeAddress: string
+  chainId?: number
+  quoteId: string // ID de la quote obtenue via getSwapQuote
+}
+```
+
+### SwapQuoteParams
+
+```typescript
+interface SwapQuoteParams {
+  fromToken: string // Adresse token source
+  toToken: string // Adresse token destination
+  amount: string // Montant à échanger
+  blockchainId: number // ID de la blockchain
+}
+```
+
+### SwapQuoteResponse
+
+```typescript
+interface SwapQuoteResponse {
+  quoteId: string
+  fromToken: TokenInfo
+  toToken: TokenInfo
+  fromAmount: string
+  toAmount: string
+  provider: 'COWSWAP' | '1INCH'
+  validUntil: string
+}
+```
+
+### BatchIntentRequest
+
+```typescript
+interface BatchIntentRequest {
+  safeAddress: string
+  chainId?: number
+  operations: SafeOperationInput[] // Array d'opérations
+}
+```
+
+### BatchIntentResponse
+
+```typescript
+interface BatchIntentResponse {
+  batchId: string
+  challenge: ArrayBuffer
+  operations: Array<{
+    userOp: UserOperation
+    // ... autres champs
+  }>
+}
+```
+
+### BatchStatusResponse
+
+```typescript
+interface BatchStatusResponse {
+  batchId: string
+  status: 'PENDING' | 'EXECUTED' | 'FAILED'
+  operations: BatchOperationInfo[]
+}
+```
+
+### OperationStatusResponse
+
+```typescript
+interface OperationStatusResponse {
+  userOpHash: string
+  status: 'CREATED' | 'SIGNED' | 'EXECUTED' | 'CONFIRMED' | 'FAILED'
+  transactionHash?: string
+  createdAt: string
+  updatedAt: string
+}
+```
+
+### UserOperationsResponse (v1.1)
+
+```typescript
+interface UserOperationsResponse {
+  data: Record<string, UserOperation[]> // Groupé par Safe address
+}
+```
+
+### RecoveryStatusResponse (v1.1)
+
+```typescript
+interface RecoveryStatusResponse {
+  safeAddress: string
+  recoveryEnabled: boolean
+  recoveryAddress: string | null
+  delay: number | null
+  pendingRecovery: boolean
+  canExecute: boolean
+  executeAfter: string | null
+  dataRecovery: boolean
+  pending: RecoveryOperation[] // Opérations en attente
+  executed: RecoveryOperation[] // Opérations exécutées
+}
+
+interface RecoveryOperation {
+  userOpHash: string
+  status: 'CREATED' | 'SIGNED' | 'EXECUTED' | 'CONFIRMED' | 'FAILED'
+  transactionHash?: string
+  createdAt: string
+  updatedAt: string
+}
+```
+
+### PoolsResponse
+
+```typescript
+interface PoolsResponse {
+  pools: WatchedPool[]
+}
+
+interface WatchedPool {
+  id: string
+  name: string
+  address: string
+  apy?: number
+  // ... autres métadonnées
+}
+```
+
+### PoolBalancesResponse
+
+```typescript
+interface PoolBalancesResponse {
+  balances: PoolBalance[]
+}
+
+interface PoolBalance {
+  poolId: string
+  balance: string
+  yield?: string
+  // ... autres informations
+}
 ```
 
 ---
@@ -278,51 +487,45 @@ type OperationType =
 ```typescript
 interface IbexData {
   // === DONNÉES UTILISATEUR ===
-  user: User | null;
-  wallet: Wallet | null;
+  user: User | null
+  wallet: Wallet | null
 
   // === DONNÉES FINANCIÈRES ===
-  balance: number;
-  transactions: Transaction[];
-  operations: Operation[];
+  balance: number
+  transactions: Transaction[]
+  operations: Operation[]
 
   // === ÉTAT DE L'APPLICATION ===
-  isLoading: boolean;
-  error: string | null;
+  isLoading: boolean
+  error: string | null
+  isConnected: boolean // État de connexion WebSocket
 
   // === ACTIONS D'AUTHENTIFICATION ===
-  signIn: () => Promise<void>;
-  signUp: (passkeyName?: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (options?: SignInOptions) => Promise<void>
+  signUp: (passkeyName?: string) => Promise<void>
+  logout: () => Promise<void>
 
   // === ACTIONS FINANCIÈRES ===
-  send: (amount: number, to: string) => Promise<void>;
-  receive: () => Promise<string>;
-  withdraw: (amount: number, iban: string) => Promise<void>;
+  send: (amount: number, to: string) => Promise<void>
+  receive: () => Promise<string>
+  withdraw: (
+    amount: number,
+    iban: string,
+    recipientInfo?: { firstName: string; lastName: string; country: string }
+  ) => Promise<void>
 
   // === ACTIONS KYC ===
-  startKyc: (language?: string) => Promise<string>;
-
-  // === ACTIONS IBEX SAFE ===
-  getUserPrivateData: (externalUserId: string) => Promise<Record<string, any>>;
-  saveUserPrivateData: (
-    externalUserId: string,
-    data: Record<string, any>
-  ) => Promise<{ success: boolean }>;
-  validateEmail: (email: string, externalUserId: string) => Promise<any>;
-  confirmEmail: (
-    email: string,
-    code: string,
-    externalUserId: string,
-    options?: any
-  ) => Promise<any>;
+  startKyc: (language?: string) => Promise<string>
 
   // === UTILITAIRES ===
-  refresh: () => Promise<void>;
-  clearError: () => void;
-  getKycStatusLabel: (level: number) => string;
-  getOperationTypeLabel: (type: string) => string;
-  getOperationStatusLabel: (status: string) => string;
+  refresh: () => Promise<void>
+  clearError: () => void
+  reconnectWebSocket: () => void
+
+  // === SDK COMPLET ===
+  sdk: IbexClient // Accès au SDK complet pour fonctionnalités avancées
+  // Note: Les méthodes getUserPrivateData, saveUserPrivateData, validateEmail, confirmEmail
+  // sont disponibles via sdk.privacy.*
 }
 ```
 
@@ -330,36 +533,36 @@ interface IbexData {
 
 ```typescript
 // Actions d'authentification
-type SignInFunction = () => Promise<void>;
-type SignUpFunction = (passkeyName?: string) => Promise<void>;
-type LogoutFunction = () => Promise<void>;
+type SignInFunction = (options?: SignInOptions) => Promise<void>
+type SignUpFunction = (passkeyName?: string | SignUpOptions) => Promise<void>
+type LogoutFunction = () => Promise<void>
 
 // Actions financières
-type SendFunction = (amount: number, to: string) => Promise<void>;
-type ReceiveFunction = () => Promise<string>;
-type WithdrawFunction = (amount: number, iban: string) => Promise<void>;
+type SendFunction = (amount: number, to: string) => Promise<void>
+type ReceiveFunction = () => Promise<string>
+type WithdrawFunction = (amount: number, iban: string) => Promise<void>
 
 // Actions KYC
-type StartKycFunction = (language?: string) => Promise<string>;
+type StartKycFunction = (language?: string) => Promise<string>
 
 // Actions IBEX Safe
-type GetUserPrivateDataFunction = (externalUserId: string) => Promise<Record<string, any>>;
+type GetUserPrivateDataFunction = (externalUserId: string) => Promise<Record<string, any>>
 type SaveUserPrivateDataFunction = (
   externalUserId: string,
   data: Record<string, any>
-) => Promise<{ success: boolean }>;
-type ValidateEmailFunction = (email: string, externalUserId: string) => Promise<any>;
+) => Promise<{ success: boolean }>
+type ValidateEmailFunction = (email: string, externalUserId: string) => Promise<any>
 type ConfirmEmailFunction = (
   email: string,
   code: string,
   externalUserId: string,
   options?: any
-) => Promise<any>;
+) => Promise<any>
 
 // Utilitaires
-type RefreshFunction = () => Promise<void>;
-type ClearErrorFunction = () => void;
-type GetKycStatusLabelFunction = (level: number) => string;
+type RefreshFunction = () => Promise<void>
+type ClearErrorFunction = () => void
+type ReconnectWebSocketFunction = () => void
 ```
 
 ---
@@ -370,10 +573,10 @@ type GetKycStatusLabelFunction = (level: number) => string;
 
 ```typescript
 interface IbexError {
-  code: string;
-  message: string;
-  details?: Record<string, any>;
-  timestamp: string;
+  code: string
+  message: string
+  details?: Record<string, any>
+  timestamp: string
 }
 ```
 
@@ -395,7 +598,7 @@ type ErrorCode =
   | 'PERMISSION_DENIED'
   | 'RATE_LIMIT_EXCEEDED'
   | 'SERVICE_UNAVAILABLE'
-  | 'UNKNOWN_ERROR';
+  | 'UNKNOWN_ERROR'
 
 type WebAuthnError =
   | 'NotSupportedError'
@@ -403,7 +606,7 @@ type WebAuthnError =
   | 'SecurityError'
   | 'InvalidStateError'
   | 'ConstraintError'
-  | 'UnknownError';
+  | 'UnknownError'
 ```
 
 ### Gestion des erreurs
@@ -412,12 +615,12 @@ type WebAuthnError =
 function handleError(error: string | IbexError) {
   if (typeof error === 'string') {
     // Erreur simple
-    console.error('Erreur:', error);
+    console.error('Erreur:', error)
   } else {
     // Erreur détaillée
-    console.error('Erreur:', error.code, error.message);
+    console.error('Erreur:', error.code, error.message)
     if (error.details) {
-      console.error('Détails:', error.details);
+      console.error('Détails:', error.details)
     }
   }
 }
@@ -431,14 +634,14 @@ function handleError(error: string | IbexError) {
 
 ```typescript
 interface IbexConfig {
-  baseURL: string;
-  domain: string;
-  rpId?: string;
-  timeout?: number;
-  retries?: number;
-  retryDelay?: number;
-  debug?: boolean;
-  defaultChainId?: number;
+  baseURL: string
+  domain: string
+  rpId?: string
+  timeout?: number
+  retries?: number
+  retryDelay?: number
+  debug?: boolean
+  defaultChainId?: number
 }
 ```
 
@@ -456,15 +659,15 @@ interface IbexConfig {
 ### Types de configuration
 
 ```typescript
-type ConfigEnvironment = 'development' | 'staging' | 'production';
-type ConfigMode = 'debug' | 'production';
+type ConfigEnvironment = 'development' | 'staging' | 'production'
+type ConfigMode = 'debug' | 'production'
 
 interface EnvironmentConfig {
-  environment: ConfigEnvironment;
-  mode: ConfigMode;
-  baseURL: string;
-  domain: string;
-  debug: boolean;
+  environment: ConfigEnvironment
+  mode: ConfigMode
+  baseURL: string
+  domain: string
+  debug: boolean
 }
 ```
 
@@ -476,11 +679,11 @@ interface EnvironmentConfig {
 
 ```typescript
 interface ComponentProps {
-  className?: string;
-  children?: React.ReactNode;
-  onSuccess?: () => void;
-  onError?: (error: string) => void;
-  onCancel?: () => void;
+  className?: string
+  children?: React.ReactNode
+  onSuccess?: () => void
+  onError?: (error: string) => void
+  onCancel?: () => void
 }
 ```
 
@@ -488,14 +691,14 @@ interface ComponentProps {
 
 ```typescript
 interface FormProps extends ComponentProps {
-  onSubmit: (data: FormData) => void;
-  onReset?: () => void;
-  disabled?: boolean;
-  loading?: boolean;
+  onSubmit: (data: FormData) => void
+  onReset?: () => void
+  disabled?: boolean
+  loading?: boolean
 }
 
 interface FormData {
-  [key: string]: any;
+  [key: string]: any
 }
 ```
 
@@ -503,10 +706,10 @@ interface FormData {
 
 ```typescript
 interface ModalProps extends ComponentProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  size?: 'small' | 'medium' | 'large';
+  isOpen: boolean
+  onClose: () => void
+  title?: string
+  size?: 'small' | 'medium' | 'large'
 }
 ```
 
@@ -518,12 +721,12 @@ interface ModalProps extends ComponentProps {
 
 ```typescript
 interface MockData {
-  user: User;
-  transactions: Transaction[];
-  operations: Operation[];
-  balance: number;
-  error: string | null;
-  isLoading: boolean;
+  user: User
+  transactions: Transaction[]
+  operations: Operation[]
+  balance: number
+  error: string | null
+  isLoading: boolean
 }
 ```
 
@@ -531,24 +734,24 @@ interface MockData {
 
 ```typescript
 interface TestConfig extends IbexConfig {
-  mockData: MockData;
-  delay?: number;
-  shouldFail?: boolean;
+  mockData: MockData
+  delay?: number
+  shouldFail?: boolean
 }
 ```
 
 ### Types de tests
 
 ```typescript
-type TestScenario = 'success' | 'error' | 'loading' | 'empty';
-type TestEnvironment = 'unit' | 'integration' | 'e2e';
+type TestScenario = 'success' | 'error' | 'loading' | 'empty'
+type TestEnvironment = 'unit' | 'integration' | 'e2e'
 
 interface TestCase {
-  name: string;
-  scenario: TestScenario;
-  environment: TestEnvironment;
-  setup: () => void;
-  teardown: () => void;
+  name: string
+  scenario: TestScenario
+  environment: TestEnvironment
+  setup: () => void
+  teardown: () => void
 }
 ```
 
@@ -560,31 +763,31 @@ interface TestCase {
 
 ```typescript
 interface MigrationConfig {
-  fromVersion: string;
-  toVersion: string;
-  steps: MigrationStep[];
-  rollback?: () => void;
+  fromVersion: string
+  toVersion: string
+  steps: MigrationStep[]
+  rollback?: () => void
 }
 
 interface MigrationStep {
-  name: string;
-  description: string;
-  execute: () => Promise<void>;
-  validate: () => Promise<boolean>;
+  name: string
+  description: string
+  execute: () => Promise<void>
+  validate: () => Promise<boolean>
 }
 ```
 
 ### Types de migration
 
 ```typescript
-type MigrationStatus = 'pending' | 'running' | 'completed' | 'failed';
-type MigrationType = 'breaking' | 'feature' | 'bugfix';
+type MigrationStatus = 'pending' | 'running' | 'completed' | 'failed'
+type MigrationType = 'breaking' | 'feature' | 'bugfix'
 
 interface MigrationResult {
-  status: MigrationStatus;
-  errors: string[];
-  warnings: string[];
-  duration: number;
+  status: MigrationStatus
+  errors: string[]
+  warnings: string[]
+  duration: number
 }
 ```
 
@@ -596,9 +799,9 @@ interface MigrationResult {
 
 ```typescript
 interface IbanUpdate {
-  previousIban: string;
-  newIban: string;
-  updatedAt: string;
+  previousIban: string
+  newIban: string
+  updatedAt: string
 }
 ```
 
@@ -606,9 +809,9 @@ interface IbanUpdate {
 
 ```typescript
 interface KycUpdate {
-  previousKyc: string;
-  newKyc: string;
-  updatedAt: string;
+  previousKyc: string
+  newKyc: string
+  updatedAt: string
 }
 ```
 
@@ -621,12 +824,12 @@ type WebSocketEventType =
   | 'auth_error'
   | 'balance_update'
   | 'new_transaction'
-  | 'user_data';
+  | 'user_data'
 
 interface WebSocketEvent {
-  type: WebSocketEventType;
-  data: any;
-  timestamp: string;
+  type: WebSocketEventType
+  data: any
+  timestamp: string
 }
 ```
 
@@ -648,13 +851,13 @@ function processTransaction(transaction: Transaction): Promise<TransactionResult
   return Promise.resolve({
     success: true,
     transactionId: transaction.id,
-  });
+  })
 }
 
 interface TransactionResult {
-  success: boolean;
-  transactionId: string;
-  error?: string;
+  success: boolean
+  transactionId: string
+  error?: string
 }
 ```
 
@@ -669,7 +872,7 @@ function processTransaction(transaction) {
   return Promise.resolve({
     success: true,
     transactionId: transaction.id,
-  });
+  })
 }
 ```
 
@@ -689,11 +892,11 @@ function processTransaction(transaction) {
 function handleApiError(error: IbexError): string {
   switch (error.code) {
     case 'AUTHENTICATION_FAILED':
-      return 'Authentification échouée';
+      return 'Authentification échouée'
     case 'NETWORK_ERROR':
-      return 'Erreur de réseau';
+      return 'Erreur de réseau'
     default:
-      return 'Erreur inconnue';
+      return 'Erreur inconnue'
   }
 }
 ```
@@ -706,7 +909,7 @@ function handleApiError(error: IbexError): string {
 ```typescript
 function handleApiError(error) {
   // Pas de types, pas de sécurité
-  return 'Erreur inconnue';
+  return 'Erreur inconnue'
 }
 ```
 
@@ -726,7 +929,7 @@ function handleApiError(error) {
 function validateUser(user: unknown): user is User {
   return (
     typeof user === 'object' && user !== null && 'id' in user && 'email' in user && 'kyc' in user
-  );
+  )
 }
 ```
 
@@ -738,7 +941,7 @@ function validateUser(user: unknown): user is User {
 ```typescript
 function validateUser(user) {
   // Pas de types, pas de sécurité
-  return user && user.id && user.email;
+  return user && user.id && user.email
 }
 ```
 
@@ -753,7 +956,7 @@ function validateUser(user) {
 ### Utilisation avec useIbex
 
 ```typescript
-import { useIbex } from '@absconse/ibex-sdk';
+import { useIbex } from '@absconse/ibex-sdk'
 
 function MyComponent() {
   const {
@@ -763,22 +966,22 @@ function MyComponent() {
     send, // (amount: number, to: string) => Promise<void>
     error, // string | null
     isLoading, // boolean
-  } = useIbex();
+  } = useIbex()
 
   // TypeScript connaît tous les types
   if (user) {
-    console.log(user.email); // ✅ Autocomplétion
-    console.log(user.kyc.status); // ✅ Types stricts
+    console.log(user.email) // ✅ Autocomplétion
+    console.log(user.kyc.status) // ✅ Types stricts
   }
 
   const handleSend = async (amount: number, to: string) => {
     try {
-      await send(amount, to); // ✅ Validation des types
-      console.log('Transaction envoyée');
+      await send(amount, to) // ✅ Validation des types
+      console.log('Transaction envoyée')
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur:', error)
     }
-  };
+  }
 
   return (
     <div>
@@ -792,7 +995,7 @@ function MyComponent() {
         </div>
       )}
     </div>
-  );
+  )
 }
 ```
 
@@ -800,9 +1003,9 @@ function MyComponent() {
 
 ```typescript
 interface TransactionCardProps {
-  transaction: Transaction;
-  onViewDetails: (transaction: Transaction) => void;
-  className?: string;
+  transaction: Transaction
+  onViewDetails: (transaction: Transaction) => void
+  className?: string
 }
 
 function TransactionCard({ transaction, onViewDetails, className }: TransactionCardProps) {
@@ -810,12 +1013,12 @@ function TransactionCard({ transaction, onViewDetails, className }: TransactionC
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString('fr-FR');
-  };
+    return new Date(date).toLocaleDateString('fr-FR')
+  }
 
   return (
     <div className={className}>
@@ -825,6 +1028,6 @@ function TransactionCard({ transaction, onViewDetails, className }: TransactionC
       <p>Statut: {transaction.status}</p>
       <button onClick={() => onViewDetails(transaction)}>Voir les détails</button>
     </div>
-  );
+  )
 }
 ```

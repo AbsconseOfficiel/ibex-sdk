@@ -3,7 +3,7 @@
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 /**
- * Service d'authentification IBEX
+ * Service d'authentification IBEX - OpenAPI v1.1
  *
  * Gère:
  * - Inscription (sign-up) avec passkeys
@@ -14,12 +14,19 @@
  * @module features/auth
  */
 
-import type { HttpClient } from '../../core/http';
-import type { AuthResponse, IframeResponse } from './auth.types';
+import type { HttpClient } from '../../core/http'
+import type {
+  AuthResponse,
+  IframeResponse,
+  SignInOptions,
+  SignUpOptions,
+  SignUpChallengeResponse,
+  SignInChallengeResponse,
+} from './auth.types'
 import {
   prepareWebAuthnRegistrationOptions,
   prepareWebAuthnAuthenticationOptions,
-} from '../../utils/webauthn';
+} from '../../utils/webauthn'
 
 /**
  * Service d'authentification
@@ -30,31 +37,38 @@ export class AuthService {
   /**
    * Inscription d'un nouvel utilisateur
    *
-   * @param passkeyName - Nom optionnel pour le passkey
+   * @param options - Options d'inscription (nom du passkey, chainIds)
    * @returns Réponse d'authentification avec tokens
    *
    * @example
    * ```typescript
-   * const auth = await authService.signUp('My iPhone');
+   * const auth = await authService.signUp({ keyName: 'My iPhone' });
    * console.log(auth.access_token);
+   * console.log(auth.safeAddress); // { "100": "0x...", "421614": "0x..." }
    * ```
    */
-  async signUp(passkeyName?: string): Promise<AuthResponse> {
+  async signUp(options?: string | SignUpOptions): Promise<AuthResponse> {
+    // Support legacy string parameter for backward compatibility
+    const opts: SignUpOptions =
+      typeof options === 'string' ? { keyName: options, keyDisplayName: options } : options || {}
+
     // 1. Obtenir les options d'inscription
-    const challengeResponse = await this.http.request<{
-      credentialRequestOptions: unknown;
-    }>('/v1/auth/sign-up', { method: 'GET' });
+    const challengeResponse = await this.http.request<SignUpChallengeResponse>('/v1/auth/sign-up', {
+      method: 'GET',
+    })
 
     // 2. Préparer les options WebAuthn
-    const options = prepareWebAuthnRegistrationOptions(challengeResponse.credentialRequestOptions);
+    const webAuthnOptions = prepareWebAuthnRegistrationOptions(
+      challengeResponse.credentialRequestOptions
+    )
 
     // 3. Créer les credentials WebAuthn
     const credential = await navigator.credentials.create({
-      publicKey: options as PublicKeyCredentialCreationOptions,
-    });
+      publicKey: webAuthnOptions as PublicKeyCredentialCreationOptions,
+    })
 
     if (!credential) {
-      throw new Error('Échec de la création des credentials');
+      throw new Error('Échec de la création des credentials')
     }
 
     // 4. Finaliser l'inscription
@@ -62,63 +76,81 @@ export class AuthService {
       method: 'POST',
       body: {
         credential,
-        chainId: 421614,
-        keyName: passkeyName,
-        keyDisplayName: passkeyName,
+        ...(opts.chainIds && { chainIds: opts.chainIds }),
+        ...(opts.keyName && { keyName: opts.keyName }),
+        ...(opts.keyDisplayName && { keyDisplayName: opts.keyDisplayName }),
       },
-    });
+    })
 
     // 5. Sauvegarder les tokens
     if (authResponse.access_token) {
-      this.http.setTokens(authResponse.access_token, authResponse.refresh_token);
+      this.http.setTokens(authResponse.access_token, authResponse.refresh_token)
     }
 
-    return authResponse;
+    return authResponse
   }
 
   /**
    * Connexion d'un utilisateur existant
    *
-   * @returns Réponse d'authentification avec tokens
+   * @param options - Options de connexion (includeBalance, includeTransactions, includeUserdata)
+   * @returns Réponse d'authentification avec tokens et données optionnelles
    *
    * @example
    * ```typescript
+   * // Connexion simple
    * const auth = await authService.signIn();
-   * console.log(auth.access_token);
+   *
+   * // Connexion avec données incluses
+   * const auth = await authService.signIn({
+   *   includeBalance: true,
+   *   includeTransactions: true,
+   *   includeUserdata: true
+   * });
+   * console.log(auth.balance);       // BCReader balances
+   * console.log(auth.transactions);  // Transaction history
+   * console.log(auth.userdata);      // IBEx Safe userdata
    * ```
    */
-  async signIn(): Promise<AuthResponse> {
+  async signIn(options?: SignInOptions): Promise<AuthResponse> {
     // 1. Obtenir les options de connexion
-    const challengeResponse = await this.http.request<{
-      credentialRequestOptions: unknown;
-    }>('/v1/auth/sign-in', { method: 'GET' });
+    const challengeResponse = await this.http.request<SignInChallengeResponse>('/v1/auth/sign-in', {
+      method: 'GET',
+    })
 
     // 2. Préparer les options WebAuthn
-    const options = prepareWebAuthnAuthenticationOptions(
+    const webAuthnOptions = prepareWebAuthnAuthenticationOptions(
       challengeResponse.credentialRequestOptions
-    );
+    )
 
     // 3. Obtenir les credentials WebAuthn
     const credential = await navigator.credentials.get({
-      publicKey: options as PublicKeyCredentialRequestOptions,
-    });
+      publicKey: webAuthnOptions as PublicKeyCredentialRequestOptions,
+    })
 
     if (!credential) {
-      throw new Error("Échec de l'authentification");
+      throw new Error("Échec de l'authentification")
     }
 
-    // 4. Finaliser la connexion
+    // 4. Finaliser la connexion avec options
     const authResponse = await this.http.request<AuthResponse>('/v1/auth/sign-in', {
       method: 'POST',
-      body: { credential, chainId: 421614 },
-    });
+      body: {
+        credential,
+        ...(options?.includeBalance !== undefined && { includeBalance: options.includeBalance }),
+        ...(options?.includeTransactions !== undefined && {
+          includeTransactions: options.includeTransactions,
+        }),
+        ...(options?.includeUserdata !== undefined && { includeUserdata: options.includeUserdata }),
+      },
+    })
 
     // 5. Sauvegarder les tokens
     if (authResponse.access_token) {
-      this.http.setTokens(authResponse.access_token, authResponse.refresh_token);
+      this.http.setTokens(authResponse.access_token, authResponse.refresh_token)
     }
 
-    return authResponse;
+    return authResponse
   }
 
   /**
@@ -130,8 +162,8 @@ export class AuthService {
    * ```
    */
   async logout(): Promise<void> {
-    this.http.clearTokens();
-    this.http.clearCache();
+    this.http.clearTokens()
+    this.http.clearCache()
   }
 
   /**
@@ -151,13 +183,13 @@ export class AuthService {
       method: 'POST',
       body: { refresh_token: refreshToken },
       skipAuth: true,
-    });
+    })
 
     if (authResponse.access_token) {
-      this.http.setTokens(authResponse.access_token, authResponse.refresh_token);
+      this.http.setTokens(authResponse.access_token, authResponse.refresh_token)
     }
 
-    return authResponse;
+    return authResponse
   }
 
   /**
@@ -177,19 +209,24 @@ export class AuthService {
       method: 'POST',
       body: { language },
       cache: false,
-    });
+    })
   }
 
   /**
    * Crée une URL de redirection complète pour le KYC
    *
+   * @deprecated Utiliser KycService.start() qui inclut le paramètre language dans l'URL
    * @param language - Langue de l'iframe (défaut: 'fr')
    * @param returnUrl - URL de retour après KYC (défaut: location.origin)
    * @returns URL de redirection complète
    *
    * @example
    * ```typescript
+   * // Deprecated - utiliser kycService.start() à la place
    * const kycUrl = await authService.createKycRedirectUrl('fr', 'https://myapp.com/kyc-callback');
+   * 
+   * // Recommandé
+   * const kycUrl = await kycService.start('fr', 'https://myapp.com/kyc-callback');
    * window.location.href = kycUrl;
    * ```
    */
@@ -197,9 +234,10 @@ export class AuthService {
     language: string = 'fr',
     returnUrl: string = typeof window !== 'undefined' ? window.location.origin : ''
   ): Promise<string> {
-    const response = await this.createIframe(language);
+    const response = await this.createIframe(language)
+    // Note: KycService.start() ajoute aussi le paramètre language à l'URL
     return `${response.chatbotURL}?session=${response.sessionId}&returnUrl=${encodeURIComponent(
       returnUrl
-    )}`;
+    )}&language=${encodeURIComponent(language)}`
   }
 }

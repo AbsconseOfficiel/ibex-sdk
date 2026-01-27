@@ -2,7 +2,7 @@
 
 # Guide d'authentification IBEX
 
-### Authentification moderne sans mot de passe avec WebAuthn
+### Authentification sans mot de passe avec WebAuthn
 
 [![WebAuthn](https://img.shields.io/badge/WebAuthn-W3C_Standard-green?logo=w3c)](https://www.w3.org/TR/webauthn/)
 [![FIDO2](https://img.shields.io/badge/FIDO2-Certified-blue)](https://fidoalliance.org/)
@@ -20,9 +20,9 @@
 <tr>
 <td width="50%">
 
-### Le standard moderne
+### Le standard W3C
 
-WebAuthn (Web Authentication) est un **standard W3C** qui révolutionne l'authentification en ligne. Au lieu de mots de passe, il utilise des **passkeys** - des identifiants cryptographiques uniques stockés sur votre appareil.
+WebAuthn (Web Authentication) est un **standard W3C** pour l'authentification en ligne. Au lieu de mots de passe, il utilise des **passkeys** - des identifiants cryptographiques uniques stockés sur votre appareil.
 
 </td>
 <td width="50%">
@@ -47,7 +47,7 @@ WebAuthn (Web Authentication) est un **standard W3C** qui révolutionne l'authen
 | **Sécurité maximale**  | Les passkeys sont impossibles à voler ou deviner, contrairement aux mots de passe  |
 | **Expérience simple**  | Une authentification biométrique ou PIN - pas besoin de mémoriser de mots de passe |
 | **Anti-phishing**      | Chaque passkey est liée à un site spécifique, empêchant les attaques               |
-| **Standard universel** | Supporté par tous les navigateurs modernes et appareils                            |
+| **Standard universel** | Supporté par tous les navigateurs et appareils récents                             |
 
 ---
 
@@ -162,7 +162,7 @@ function AuthComponent() {
 
 ```tsx
 function LoginComponent() {
-  const { user, isLoading, error, signIn, signUp, logout, clearError } = useIbex()
+  const { user, wallet, isLoading, error, signIn, signUp, logout, clearError } = useIbex()
 
   // ❌ Gestion des erreurs
   if (error) {
@@ -224,9 +224,9 @@ function LoginComponent() {
         <p>
           <strong>KYC :</strong> {user.kyc.status}
         </p>
-        {user.wallet && (
+        {wallet && (
           <p>
-            <strong>Wallet :</strong> {user.wallet.address}
+            <strong>Wallet :</strong> {wallet.address}
           </p>
         )}
       </div>
@@ -268,6 +268,7 @@ const handleSignUp = async () => {
 ### Connexions suivantes (SignIn)
 
 ```typescript
+// Connexion simple
 const handleSignIn = async () => {
   try {
     await signIn()
@@ -276,17 +277,32 @@ const handleSignIn = async () => {
     // ❌ Gestion d'erreur
   }
 }
+
+// Connexion avec options v1.1
+const handleSignInWithData = async () => {
+  try {
+    await signIn({
+      includeBalance: true, // Inclure les balances dans la réponse
+      includeTransactions: true, // Inclure les transactions dans la réponse
+      includeUserdata: true, // Inclure les données utilisateur
+    })
+    // ✅ Connexion réussie avec données supplémentaires
+  } catch (error) {
+    // ❌ Gestion d'erreur
+  }
+}
 ```
 
 **Ce qu'il se passe :**
 
-| Étape | Action                            |
-| ----- | --------------------------------- |
-| 1️⃣    | Clic sur "Se connecter"           |
-| 2️⃣    | Demande d'authentification        |
-| 3️⃣    | Vérification (PIN/biométrie/clé)  |
-| 4️⃣    | Signature cryptographique générée |
-| 5️⃣    | ✅ Connexion validée              |
+| Étape | Action                                                 |
+| ----- | ------------------------------------------------------ |
+| 1️⃣    | Clic sur "Se connecter"                                |
+| 2️⃣    | Demande d'authentification                             |
+| 3️⃣    | Vérification (PIN/biométrie/clé)                       |
+| 4️⃣    | Signature cryptographique générée                      |
+| 5️⃣    | ✅ Connexion validée                                   |
+| 6️⃣    | (v1.1) Données supplémentaires retournées si demandées |
 
 ### Déconnexion (Logout)
 

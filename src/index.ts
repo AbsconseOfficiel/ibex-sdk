@@ -3,7 +3,7 @@
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 /**
- * IBEX SDK - Point d'entrée principal
+ * IBEX SDK - Point d'entrée principal - OpenAPI v1.1
  *
  * SDK React/TypeScript moderne pour l'intégration des services IBEX.
  * Architecture modulaire avec features namespaced.
@@ -36,8 +36,9 @@
  *   await send(100, '0x...');
  *
  *   // Usage avancé
- *   await sdk.safe.enableRecovery({ ... });
- *   await sdk.privacy.saveUserData({ ... });
+ *   await sdk.safe.transferToken({ ... });
+ *   await sdk.safe.aaveSupply({ ... });
+ *   await sdk.blockchain.getPools(100);
  * }
  * ```
  *
@@ -53,60 +54,164 @@ export { useIbex } from './hooks/useIbex'
 export { IbexProvider, useIbexConfig } from './context/IbexProvider'
 
 // ============================================================================
-// TYPES
+// TYPES - Configuration
+// ============================================================================
+
+export type { IbexConfig, CacheConfig, WebSocketConfig } from './types'
+
+// ============================================================================
+// TYPES - Base
+// ============================================================================
+
+export type { User, Wallet, Balance, Transaction, Operation } from './types'
+
+// ============================================================================
+// TYPES - Auth
 // ============================================================================
 
 export type {
-  // Configuration
-  IbexConfig,
-  CacheConfig,
-  WebSocketConfig,
-
-  // Types de base
-  User,
-  Wallet,
-  Balance,
-  Transaction,
-  Operation,
-
-  // Auth
   AuthResponse,
   IframeResponse,
+  SignInOptions,
+  SignUpOptions,
+  RegistrationCredentialOptions,
+  AuthenticationCredentialOptions,
+  SignUpChallengeResponse,
+  SignInChallengeResponse,
+} from './types'
 
-  // Wallet
+// ============================================================================
+// TYPES - User
+// ============================================================================
+
+export type {
+  UserDetailsResponse,
   WalletAddressesResponse,
   ChainIdsResponse,
-  UserDetailsResponse,
   WalletInfo,
+  SafeIbanInfo,
+  SafeInfo,
+  SignerInfo,
+} from './types'
 
-  // Transactions
-  TransactionsHistoryResponse,
-  TransactionsBalancesResponse,
-  TransactionsOptions,
+// ============================================================================
+// TYPES - Safe Operations
+// ============================================================================
 
-  // Safe
+export type {
+  // Operation types
+  SafeOperationType,
+  SafeOperationInput,
+  TransferEureOperation,
+  TransferTokenOperation,
+  MoneriumCreateIbanOperation,
+  MoneriumWithdrawOperation,
+  SignMessageOperation,
+  EnableRecoveryOperation,
+  CancelRecoveryOperation,
+  AaveSupplyOperation,
+  AaveWithdrawOperation,
+  SwapFromQuoteOperation,
+  RecipientInfo,
+
+  // Request/Response
   SafeOperationRequest,
   SafeOperationResponse,
+  SafeOperationExecuteResponse,
+
+  // Batch
+  BatchOptions,
+  BatchIntentRequest,
+  BatchIntentResponse,
+  BatchExecuteRequest,
+  BatchOperationStatus,
+  BatchOperationInfo,
+  BatchStatusResponse,
+
+  // Status
+  OperationStatus,
+  OperationStatusResponse,
+
+  // Parameters
   TransferParams,
+  TransferTokenParams,
   WithdrawParams,
   SignMessageParams,
   EnableRecoveryParams,
+  AaveSupplyParams,
+  AaveWithdrawParams,
+  SwapFromQuoteParams,
+
+  // User Operations
+  SafeOperationDetails,
+  UserOperation,
   UserOperationsResponse,
-  RecipientInfo,
+} from './types'
 
-  // Recovery
-  RecoveryStatusResponse,
+// ============================================================================
+// TYPES - Recovery
+// ============================================================================
 
-  // Privacy
+export type { RecoveryOperation, RecoveryStatusResponse, RecoveryResponse } from './types'
+
+// ============================================================================
+// TYPES - Blockchain
+// ============================================================================
+
+export type {
+  // Token
+  TokenInfo,
+  TokenBalance,
+
+  // Balances
+  BalancesResponse,
+  BalancesParams,
+
+  // Transactions
+  BCReaderTransaction,
+  TransactionsResponse,
+  TransactionsParams,
+
+  // Pools (AAVE)
+  PoolMetadata,
+  WatchedPool,
+  PoolsResponse,
+  PoolBalance,
+  PoolBalancesResponse,
+  PoolBalancesParams,
+
+  // Swap
+  SwapProvider,
+  SwapQuoteParams,
+  SwapQuoteResponse,
+} from './types'
+
+// ============================================================================
+// TYPES - Privacy
+// ============================================================================
+
+export type {
   UserPrivateData,
   SaveUserDataResponse,
   ValidateEmailResponse,
   ConfirmEmailParams,
+} from './types'
 
-  // Blockchain
-  BalancesResponse,
-  TransactionsResponse,
-  TransactionsParams,
+// ============================================================================
+// TYPES - Simplified/Utility
+// ============================================================================
+
+export type {
+  TransactionsHistoryResponse,
+  TransactionsBalancesResponse,
+  TransactionsOptions,
+  TransactionOptions,
+  BalanceOptions,
+  WebAuthnOptions,
+  KycStatus,
+  KycStatusInfo,
+  ApiError,
+  ApiResponse,
 } from './types'
 
 // ============================================================================
@@ -170,3 +275,4 @@ export { KycService } from './features/kyc'
 export { RecoveryService } from './features/recovery'
 export { PrivacyService } from './features/privacy'
 export { HealthService } from './features/health'
+export { BitcoinService } from './features/bitcoin'

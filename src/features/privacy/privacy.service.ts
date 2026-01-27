@@ -52,8 +52,8 @@ export class PrivacyService {
       cache: false,
     });
 
-    // Invalider le cache
-    this.http.invalidateCache(externalUserId);
+    // Invalider le cache pour cet utilisateur spécifique
+    this.http.invalidateCacheByEndpoint(`/v1/ibexsafe/userdata/external/${externalUserId}`);
 
     return result;
   }

@@ -5,11 +5,70 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-01-15
+
+### Added - Conformité OpenAPI v1.1
+
+#### Nouvelles opérations Safe
+
+- ✅ **TRANSFER_TOKEN** : Transfert générique ERC20 (remplace TRANSFER_EURe pour usage générique)
+- ✅ **AAVE_SUPPLY** : Dépôt dans pool AAVE avec support assetTicker ou tokenAddress
+- ✅ **AAVE_WITHDRAW** : Retrait de pool AAVE
+- ✅ **SWAP_FROM_QUOTE** : Exécution de swap depuis une quote obtenue via getSwapQuote
+
+#### Batch operations
+
+- ✅ **prepareBatch()** : Préparation d'un batch d'opérations multiples
+- ✅ **executeBatch()** : Exécution d'un batch avec une seule signature WebAuthn
+- ✅ **getBatchStatus()** : Suivi du statut d'un batch
+
+#### Status operations
+
+- ✅ **getOperationStatus()** : Récupération du statut d'une opération par userOpHash
+- ✅ **waitForOperation()** : Attente de confirmation d'une opération avec polling
+
+#### Blockchain (BCReader v1.1)
+
+- ✅ **getPools()** : Liste des pools AAVE actifs pour une blockchain
+- ✅ **getPoolBalances()** : Balances dans les pools avec yields
+- ✅ **getSwapQuote()** : Obtention de quotes de swap (COWSWAP/1INCH)
+
+#### Auth v1.1
+
+- ✅ **signIn() avec options** : includeBalance, includeTransactions, includeUserdata
+- ✅ **signUp() avec options** : keyName, keyDisplayName, chainIds
+
+#### Users v1.1
+
+- ✅ **getUserOperations()** : Format groupé par Safe address (`Record<string, UserOperation[]>`)
+
+#### Recovery v1.1
+
+- ✅ **getRecoveryStatus()** : Inclut maintenant `pending[]` et `executed[]` arrays
+
+### Changed
+
+- **UserOperationsResponse** : Format changé de `Array<Operation>` à `Record<string, Operation[]>` (groupé par Safe)
+- **RecoveryStatusResponse** : Ajout des champs `pending` et `executed` pour suivre les opérations de récupération
+- **AuthResponse** : Ajout des champs optionnels `balance`, `transactions`, `userdata`, `services`
+- **Endpoints v1.1** : Migration vers `/v1.1/users/me/operations` et `/v1.1/recovery/status/{safeAddress}`
+
+### Deprecated
+
+- **TRANSFER_EURe** : Marqué comme deprecated, utiliser `TRANSFER_TOKEN` avec l'adresse du token EURe
+- **transfer()** : Méthode deprecated dans SafeService, utiliser `transferToken()` à la place
+
+### Fixed
+
+- Correction du format `UserOperationsResponse` dans `useIbex.ts` pour gérer le nouveau format groupé
+- Ajout du paramètre `recipientInfo` requis dans la méthode `withdraw()`
+- Correction des types TypeScript pour `process.env` et `NodeJS.Timeout`
+
 ## [2.0.0] - 2025-10-17
 
-### 🎯 Refactorisation Majeure - Architecture Modulaire
+### Architecture Modulaire
 
-Version révolutionnaire du SDK IBEX avec **refonte complète** de l'architecture pour une modularité et une expérience développeur exceptionnelles.
+Version du SDK IBEX avec refonte de l'architecture pour une meilleure modularité.
 
 ### Added
 
@@ -20,11 +79,11 @@ Version révolutionnaire du SDK IBEX avec **refonte complète** de l'architectur
 - ✅ **API namespaced** : `sdk.auth.signIn()`, `sdk.safe.transfer()`, `sdk.privacy.saveUserData()`
 - ✅ **Accès SDK via hook** : `const { sdk } = useIbex()` pour usage avancé
 
-#### Core Services Optimisés
+#### Core Services
 
 - ✅ **HttpClient** : Retry automatique, interceptors, timeout configurable, refresh token automatique
-- ✅ **CacheManager** : Cache multi-niveaux (Memory L1, SessionStorage L2, LocalStorage L3)
-- ✅ **WebSocketService** : Reconnexion exponentielle, heartbeat, file d'attente de messages
+- ✅ **StorageManager** : Cache multi-niveaux (Memory L1, SessionStorage L2, LocalStorage L3)
+- ✅ **WebSocketService** : Reconnexion automatique, heartbeat, file d'attente de messages
 - ✅ **StorageManager** : Gestion unifiée du stockage avec TTL automatique
 
 #### Features Complètes (100% Swagger IBEX)
@@ -44,7 +103,7 @@ Version révolutionnaire du SDK IBEX avec **refonte complète** de l'architectur
 - ✅ **L2 (SessionStorage)** : Persistant pendant la session
 - ✅ **L3 (LocalStorage)** : Persistant entre sessions
 - ✅ **LRU Eviction** : Éviction automatique des entrées les moins utilisées
-- ✅ **Stratégies par type** : TTL et niveau optimisés selon le type de donnée
+- ✅ **Stratégies par type** : TTL et niveau configurés selon le type de donnée
 - ✅ **Métriques** : hits, misses, hitRate, evictions
 
 #### Documentation Complète
@@ -111,13 +170,13 @@ src/
 
 ### Performance
 
-#### Optimisations Majeures
+#### Optimisations
 
-- ✅ **-90% de requêtes API** : Cache intelligent avec stratégies par type
-- ✅ **-70% temps de chargement** : Cache multi-niveaux + préchargement
-- ✅ **WebSocket robuste** : Reconnexion + queue + heartbeat = 0 perte de message
+- ✅ **Réduction des requêtes API** : Cache avec stratégies par type
+- ✅ **Temps de chargement réduit** : Cache multi-niveaux + préchargement
+- ✅ **WebSocket** : Reconnexion + queue + heartbeat
 - ✅ **Retry automatique** : Exponential backoff pour les erreurs réseau
-- ✅ **Tree-shaking parfait** : Import seulement ce dont vous avez besoin
+- ✅ **Tree-shaking** : Import seulement ce dont vous avez besoin
 
 #### Métriques Disponibles
 
@@ -367,11 +426,11 @@ await sdk.privacy.saveUserData({ ... });
 
 ## Notes de version
 
-### Version 1.0.0 - Révolution de la simplicité
+### Version 1.0.0
 
 Le SDK IBEX 1.0.0 introduit une architecture simplifiée qui réduit la complexité tout en offrant toutes les fonctionnalités nécessaires pour une application utilisant les APIs IBEX.
 
-#### Innovation majeure : Hook unique `useIbex`
+#### Hook unique `useIbex`
 
 Contrairement aux solutions traditionnelles qui nécessitent des dizaines de hooks et APIs complexes, l'IBEX SDK utilise **un seul hook** qui remplace tout :
 
@@ -399,7 +458,7 @@ const {
   refresh: refreshOperations,
 } = useUserOperations()
 
-// Après : Simplicité révolutionnaire
+// Après : API simplifiée
 const {
   user,
   balance,
@@ -478,9 +537,8 @@ Cette version améliore l'expérience développeur :
 - **Réduction de complexité** par rapport aux solutions traditionnelles
 - **Temps d'intégration** : de plusieurs jours à quelques minutes
 - **Maintenance simplifiée** : Un seul hook à maintenir au lieu de dizaines
-- **Performance** : Cache intelligent et optimisations automatiques
-- **Sécurité maximale** : WebAuthn et validation stricte
-- **Accessibilité native** : Conformité WCAG dès la première ligne
+- **Performance** : Cache et optimisations automatiques
+- **Sécurité** : WebAuthn et validation stricte
 
 ## Support
 

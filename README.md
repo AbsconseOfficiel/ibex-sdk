@@ -32,11 +32,12 @@ L'IBEX SDK v2.0 est une bibliothèque React/TypeScript qui fournit une interface
 Organisation par features avec namespace pour une structure claire.
 
 ```typescript
-await sdk.auth.signIn();
-await sdk.wallet.getAddresses();
-await sdk.safe.transfer({ to, amount });
-await sdk.kyc.start();
-await sdk.privacy.saveUserData({ ... });
+await sdk.auth.signIn({ includeBalance: true });
+await sdk.users.getWalletAddresses();
+await sdk.safe.transferToken({ tokenAddress, to, amount });
+await sdk.safe.aaveSupply({ amount, assetTicker: 'EURe' });
+await sdk.blockchain.getPools(100);
+await sdk.safe.prepareBatch({ operations: [...] });
 ```
 
 </td>
@@ -46,12 +47,12 @@ await sdk.privacy.saveUserData({ ... });
 
 Implémentation de tous les endpoints OpenAPI avec types TypeScript.
 
-- ✅ Auth & WebAuthn
-- ✅ Wallets & Addresses
-- ✅ Transactions & Balances
-- ✅ Safe Operations
-- ✅ KYC & Recovery
-- ✅ Privacy & Blockchain
+- ✅ Auth & WebAuthn (v1.1 avec options)
+- ✅ Users & Wallets
+- ✅ Safe Operations (transferToken, AAVE, swap, batch)
+- ✅ Blockchain (BCReader v1.1, pools, swap quotes)
+- ✅ KYC & Recovery (v1.1 avec pending/executed)
+- ✅ Privacy & Health
 
 </td>
 </tr>
@@ -88,13 +89,13 @@ await sdk.blockchain.getTransactions({ startDate, endDate });
 
 ### Fonctionnalités Principales
 
-- **Architecture modulaire** - 8 features isolées (auth, wallet, safe, transactions, kyc, recovery, privacy, blockchain)
+- **Architecture modulaire** - 8 features isolées (auth, users, safe, blockchain, kyc, recovery, privacy, health)
 - **Cache multi-niveaux** - Memory + SessionStorage + LocalStorage avec LRU eviction
-- **WebSocket optimisé** - Reconnexion intelligente, heartbeat, file d'attente
+- **WebSocket** - Reconnexion automatique, heartbeat, file d'attente
 - **Tree-shaking** - Import seulement ce dont vous avez besoin
 - **Types stricts** - Générés depuis OpenAPI spec
 - **JSDoc complet** - Documentation inline avec exemples
-- **Performance optimisée** - Réduction des requêtes via cache intelligent
+- **Conforme OpenAPI v1.1** - Toutes les fonctionnalités disponibles
 
 ---
 
@@ -227,40 +228,86 @@ function AdvancedFeatures() {
     })
   }
 
-  // Privacy - Save user data
-  const savePreferences = async () => {
-    const { user } = await sdk.wallet.getUserDetails()
+  // Transfer Token (ERC20 générique)
+  const transferToken = async () => {
+    if (!wallet) return
 
-    await sdk.privacy.saveUserData(user.id, {
-      email: 'john@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      language: 'fr',
-      'optin.newsletter': true,
-      'optin.walletAlerts': true,
-      'private.apiKey': 'secret', // Préfixe 'private.' non retourné en GET
+    await sdk.transferToken({
+      safeAddress: wallet.address,
+      chainId: wallet.chainId,
+      tokenAddress: '0x...', // Adresse token ERC20
+      to: '0x...',
+      amount: '100',
     })
   }
 
-  // Blockchain - Get detailed transactions
-  const getHistory = async () => {
-    const transactions = await sdk.blockchain.getTransactions({
-      startDate: '2025-01-01',
-      endDate: '2025-12-31',
-      limit: 100,
-      page: 1,
-    })
+  // AAVE Operations
+  const supplyToAave = async () => {
+    if (!wallet) return
 
-    console.log(transactions)
+    await sdk.aaveSupply({
+      safeAddress: wallet.address,
+      chainId: wallet.chainId,
+      amount: '1000',
+      assetTicker: 'EURe',
+    })
   }
 
-  // Recovery status
+  // Swap Operations
+  const executeSwap = async () => {
+    if (!wallet) return
+
+    // 1. Obtenir quote
+    const quote = await sdk.getSwapQuote({
+      fromToken: '0x...',
+      toToken: '0x...',
+      amount: '100',
+      blockchainId: wallet.chainId,
+    })
+
+    // 2. Exécuter swap
+    await sdk.swapFromQuote({
+      safeAddress: wallet.address,
+      chainId: wallet.chainId,
+      quoteId: quote.quoteId,
+    })
+  }
+
+  // Batch Operations
+  const executeBatch = async () => {
+    if (!wallet) return
+
+    const batch = await sdk.prepareBatch({
+      safeAddress: wallet.address,
+      chainId: wallet.chainId,
+      operations: [
+        { type: 'TRANSFER_TOKEN', tokenAddress: '0x...', to: '0x...', amount: '100' },
+        { type: 'AAVE_SUPPLY', amount: '500', assetTicker: 'EURe' },
+      ],
+    })
+
+    await sdk.executeBatch(batch)
+  }
+
+  // Pools (AAVE)
+  const checkPools = async () => {
+    const pools = await sdk.getPools(100) // Gnosis Chain
+    const poolBalances = await sdk.getPoolBalances({
+      address: wallet?.address || '',
+      blockchainId: 100,
+    })
+    console.log('Pools:', pools)
+    console.log('Pool balances:', poolBalances)
+  }
+
+  // Recovery status (v1.1)
   const checkRecovery = async () => {
     if (!wallet) return
 
-    const status = await sdk.recovery.getStatus(wallet.address)
+    const status = await sdk.getRecoveryStatus(wallet.address)
     console.log('Recovery enabled:', status.recoveryEnabled)
-    console.log('Can execute:', status.canExecute)
+    console.log('Pending operations:', status.pending)
+    console.log('Executed operations:', status.executed)
   }
 
   return (
@@ -281,16 +328,16 @@ function AdvancedFeatures() {
 
 ### Features Disponibles
 
-| Feature          | Description               | Endpoints                                                                   |
-| ---------------- | ------------------------- | --------------------------------------------------------------------------- |
-| **auth**         | Authentification WebAuthn | signUp, signIn, refresh, createIframe                                       |
-| **wallet**       | Gestion wallets           | getAddresses, getChainIds, getUserDetails, getReceiveAddress                |
-| **transactions** | Historique & envois       | getHistory, getBalances                                                     |
-| **safe**         | Opérations Safe           | transfer, withdraw, createIban, signMessage, enableRecovery, cancelRecovery |
-| **kyc**          | Vérification identité     | start, getStatus                                                            |
-| **recovery**     | Récupération wallet       | getStatus                                                                   |
-| **privacy**      | Données privées           | getUserData, saveUserData, validateEmail, confirmEmail                      |
-| **blockchain**   | Lecture blockchain        | getBalances, getTransactions                                                |
+| Feature        | Description                | Endpoints                                                                 |
+| -------------- | -------------------------- | ------------------------------------------------------------------------- |
+| **auth**       | Authentification WebAuthn  | signUp, signIn (v1.1 avec options), refresh, createKycRedirectUrl         |
+| **users**      | Informations utilisateur   | getUserDetails, getUserOperations (v1.1), getWalletAddresses, getChainIds |
+| **safe**       | Opérations Safe            | transferToken, withdraw, aaveSupply, aaveWithdraw, swapFromQuote, batch   |
+| **blockchain** | BCReader v1.1              | getBalances, getTransactions, getPools, getPoolBalances, getSwapQuote     |
+| **recovery**   | Récupération wallet (v1.1) | getRecoveryStatus (avec pending/executed)                                 |
+| **privacy**    | Données privées            | getUserData, saveUserData, validateEmail, confirmEmail                    |
+| **kyc**        | Vérification identité      | startKyc, createKycRedirectUrl                                            |
+| **health**     | Health check               | getHealth                                                                 |
 
 ### Exemples par Feature
 
@@ -303,29 +350,48 @@ await sdk.auth.logout()
 const iframe = await sdk.auth.createIframe('fr')
 ```
 
-#### Wallet
+#### Users
 
 ```typescript
-const addresses = await sdk.wallet.getAddresses()
-const chainIds = await sdk.wallet.getChainIds()
-const receiveAddr = await sdk.wallet.getReceiveAddress()
+const details = await sdk.getUserDetails()
+const operations = await sdk.getUserOperations() // v1.1 - groupé par Safe
+const addresses = await sdk.getWalletAddresses()
+const chainIds = await sdk.getSupportedChainIds()
 ```
 
-#### Safe
+#### Safe Operations
 
 ```typescript
-await sdk.safe.transfer({ safeAddress, to, amount })
-await sdk.safe.withdraw({ safeAddress, iban, amount, recipientInfo })
-await sdk.safe.createIban(safeAddress)
-await sdk.safe.signMessage({ safeAddress, message })
-await sdk.safe.enableRecovery({
-  safeAddress,
-  firstName,
-  lastName,
-  birthDate,
-  birthCity,
-  birthCountry,
-})
+// Transfert ERC20 générique
+await sdk.transferToken({ safeAddress, chainId, tokenAddress, to, amount })
+
+// AAVE
+await sdk.aaveSupply({ safeAddress, chainId, amount, assetTicker: 'EURe' })
+await sdk.aaveWithdraw({ safeAddress, chainId, amount, assetTicker: 'EURe' })
+
+// Swap
+const quote = await sdk.getSwapQuote({ fromToken, toToken, amount, blockchainId })
+await sdk.swapFromQuote({ safeAddress, chainId, quoteId })
+
+// Batch
+const batch = await sdk.prepareBatch({ safeAddress, chainId, operations: [...] })
+await sdk.executeBatch(batch)
+
+// Autres opérations
+await sdk.withdraw({ safeAddress, iban, amount, recipientInfo })
+await sdk.createIban(safeAddress)
+await sdk.signMessage({ safeAddress, message })
+await sdk.enableRecovery({ safeAddress, firstName, lastName, birthDate, birthCity, birthCountry })
+```
+
+#### Blockchain (BCReader v1.1)
+
+```typescript
+const balances = await sdk.getBalances({ address, blockchainId })
+const transactions = await sdk.getTransactions({ address, blockchainId })
+const pools = await sdk.getPools(blockchainId)
+const poolBalances = await sdk.getPoolBalances({ address, blockchainId })
+const swapQuote = await sdk.getSwapQuote({ fromToken, toToken, amount, blockchainId })
 ```
 
 #### Privacy
@@ -341,7 +407,7 @@ await sdk.privacy.confirmEmail({ email, code, externalUserId })
 
 ## Performance & Cache
 
-### Cache Intelligent Multi-Niveaux
+### Cache Multi-Niveaux
 
 - **L1 (Memory)** : Le plus rapide, volatile
 - **L2 (SessionStorage)** : Persistant pendant la session
@@ -388,9 +454,10 @@ const { isConnected } = useIbex()
 
 1. **Architecture modulaire** : Features namespaced
 2. **Hook simplifié** : Accès au SDK via `sdk`
-3. **Types organisés** : Imports depuis `shared/types`
-4. **Cache optimisé** : Multi-niveaux automatique
-5. **WebSocket amélioré** : Reconnexion + heartbeat
+3. **Types organisés** : Imports depuis `types`
+4. **Cache multi-niveaux** : Memory + SessionStorage + LocalStorage
+5. **WebSocket** : Reconnexion automatique + heartbeat
+6. **OpenAPI v1.1** : Nouvelles fonctionnalités (transferToken, AAVE, swap, batch, pools)
 
 ### Guide de migration
 
@@ -410,8 +477,11 @@ await signIn();
 await send(100, '0x...');
 
 // Nouvelles fonctionnalités via SDK
-await sdk.safe.enableRecovery({ ... });
-await sdk.privacy.saveUserData({ ... });
+await sdk.transferToken({ ... });
+await sdk.aaveSupply({ ... });
+await sdk.swapFromQuote({ ... });
+await sdk.prepareBatch({ ... });
+await sdk.getPools(100);
 ```
 
 ---

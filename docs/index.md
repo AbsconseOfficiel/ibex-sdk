@@ -26,11 +26,12 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 
 ### Fonctionnalités principales
 
-- **Authentification WebAuthn** : Sécurisé avec passkeys
-- **Architecture modulaire** : 8 features isolées (auth, wallet, safe, privacy, etc.)
+- **Authentification WebAuthn** : Sécurisé avec passkeys (v1.1 avec options)
+- **Architecture modulaire** : 8 features isolées (auth, users, safe, blockchain, privacy, etc.)
 - **API simplifiée** : Actions simples via hook + SDK complet
-- **Cache intelligent** : Multi-niveaux avec réduction des requêtes
-- **Temps réel** : WebSocket optimisé avec reconnexion automatique
+- **Cache multi-niveaux** : Memory + SessionStorage + LocalStorage
+- **Temps réel** : WebSocket avec reconnexion automatique
+- **OpenAPI v1.1** : transferToken, AAVE, swap, batch, pools
 
 </td>
 <td width="50%">
@@ -38,10 +39,10 @@ L'IBEX SDK est une bibliothèque React/TypeScript qui simplifie l'intégration d
 ### Avantages
 
 - **Simplicité** : API simple pour cas d'usage basiques
-- **Puissance** : SDK complet pour fonctionnalités avancées
-- **Performance** : Réduction des requêtes API et temps de chargement
+- **Fonctionnalités complètes** : SDK complet pour fonctionnalités avancées
+- **Cache** : Réduction des requêtes API
 - **TypeScript** : Types stricts et autocomplétion complète
-- **Production-ready** : 100% du Swagger IBEX implémenté
+- **Conforme OpenAPI v1.1** : Toutes les fonctionnalités disponibles
 
 </td>
 </tr>
@@ -76,7 +77,7 @@ function App() {
 }
 
 function Dashboard() {
-  const { user, balance, signIn, send, sdk } = useIbex()
+  const { user, balance, signIn, send, sdk, wallet } = useIbex()
 
   if (!user) {
     return <button onClick={signIn}>Se connecter</button>
@@ -94,8 +95,8 @@ function Dashboard() {
       {/* Actions avancées via SDK */}
       <button
         onClick={async () => {
-          const user = await sdk.users.getMe()
-          console.log('Mon profil:', user)
+          const userDetails = await sdk.getUserDetails()
+          console.log('Mon profil:', userDetails)
         }}
       >
         Voir mon profil
@@ -103,7 +104,23 @@ function Dashboard() {
 
       <button
         onClick={async () => {
-          const kycUrl = await sdk.privacy.startKyc('fr')
+          if (!wallet) return
+          // Transfert ERC20
+          await sdk.transferToken({
+            safeAddress: wallet.address,
+            chainId: wallet.chainId,
+            tokenAddress: '0x...',
+            to: '0x...',
+            amount: '100',
+          })
+        }}
+      >
+        Transférer token
+      </button>
+
+      <button
+        onClick={async () => {
+          const kycUrl = await sdk.startKyc('fr')
           window.open(kycUrl, '_blank')
         }}
       >
@@ -118,7 +135,7 @@ function Dashboard() {
 
 - ✅ Application fonctionnelle en quelques lignes
 - ✅ Authentification WebAuthn intégrée
-- Interface utilisateur moderne
+- ✅ Accès aux nouvelles fonctionnalités v1.1
 
 ---
 
@@ -371,7 +388,7 @@ function Dashboard() {
 - Gestion des soldes
 - Transactions en temps réel
 - Authentification sécurisée
-- Interface utilisateur moderne
+- Opérations Safe (transferToken, AAVE, swap, batch)
 
 </td>
 <td width="50%">
@@ -408,7 +425,7 @@ function Dashboard() {
 - PWA supportées
 - Authentification biométrique
 - Synchronisation cross-platform
-- Performance optimisée
+- Support des pools AAVE et swaps
 
 </td>
 </tr>

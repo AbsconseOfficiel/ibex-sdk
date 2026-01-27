@@ -5,11 +5,130 @@
 // LinkedIn: https://www.linkedin.com/in/dylanenjolvin/
 
 /**
- * Types TypeScript unifiés pour le SDK IBEX
+ * Types TypeScript unifiés pour le SDK IBEX - OpenAPI v1.1
  * Conformes au Swagger IBEX
  */
 
-// Types WebAuthn - utilisation des types DOM existants
+// ============================================================================
+// RE-EXPORTS FROM FEATURE MODULES
+// ============================================================================
+
+// Auth types
+export type {
+  AuthResponse,
+  IframeResponse,
+  SignInOptions,
+  SignUpOptions,
+  RegistrationCredentialOptions,
+  AuthenticationCredentialOptions,
+  SignUpChallengeResponse,
+  SignInChallengeResponse,
+} from '../features/auth'
+
+// Safe types
+export type {
+  SafeOperationType,
+  SafeOperationInput,
+  TransferEureOperation,
+  TransferTokenOperation,
+  MoneriumCreateIbanOperation,
+  MoneriumWithdrawOperation,
+  SignMessageOperation,
+  EnableRecoveryOperation,
+  CancelRecoveryOperation,
+  AaveSupplyOperation,
+  AaveWithdrawOperation,
+  SwapFromQuoteOperation,
+  RecipientInfo,
+  SafeOperationRequest,
+  SafeOperationResponse,
+  SafeOperationExecuteResponse,
+  BatchOptions,
+  BatchIntentRequest,
+  BatchIntentResponse,
+  BatchExecuteRequest,
+  BatchOperationStatus,
+  BatchOperationInfo,
+  BatchStatusResponse,
+  OperationStatus,
+  OperationStatusResponse,
+  TransferParams,
+  TransferTokenParams,
+  WithdrawParams,
+  SignMessageParams,
+  EnableRecoveryParams,
+  AaveSupplyParams,
+  AaveWithdrawParams,
+  SwapFromQuoteParams,
+} from '../features/safe'
+
+// User types
+export type {
+  SafeIbanInfo,
+  SafeInfo,
+  SignerInfo,
+  UserDetailsResponse,
+  ChainIdsResponse,
+  WalletInfo,
+  WalletAddressesResponse,
+  SafeOperationDetails,
+  UserOperation,
+  UserOperationsResponse,
+} from '../features/users'
+
+// Recovery types
+export type {
+  RecoveryOperation,
+  RecoveryStatusResponse,
+  RecoveryResponse,
+} from '../features/recovery'
+
+// Blockchain types
+export type {
+  TokenInfo,
+  TokenBalance,
+  BalancesResponse,
+  BalancesParams,
+  BCReaderTransaction,
+  TransactionsResponse,
+  TransactionsParams,
+  PoolMetadata,
+  WatchedPool,
+  PoolsResponse,
+  PoolBalance,
+  PoolBalancesResponse,
+  PoolBalancesParams,
+  SwapProvider,
+  SwapQuoteParams,
+  SwapQuoteResponse,
+} from '../features/blockchain'
+
+// Privacy types
+export type {
+  UserPrivateData,
+  SaveUserDataResponse,
+  ValidateEmailResponse,
+  ConfirmEmailParams,
+} from '../features/privacy'
+
+// Bitcoin types
+export type {
+  BitcoinNetwork,
+  BitcoinFeeProfile,
+  BitcoinNetworkInfo,
+  BitcoinFeeRates,
+  BitcoinUTXO,
+  BitcoinUtxosResponse,
+  BitcoinPsbtInput,
+  BitcoinPsbtOutput,
+  BitcoinBuildPsbtParams,
+  BitcoinBuildPsbtResponse,
+  BitcoinBroadcastParams,
+  BitcoinBroadcastResponse,
+  BitcoinSendPrepareParams,
+  SelectedUTXO,
+  BitcoinSendPrepareResponse,
+} from '../features/bitcoin'
 
 // ============================================================================
 // TYPES DE BASE SIMPLIFIÉS
@@ -20,7 +139,7 @@
  */
 export interface User {
   id: string
-  email: string | null // null si KYC non fait
+  email: string | null
   kyc: {
     status:
       | 'not_started'
@@ -64,19 +183,23 @@ export interface Transaction {
 }
 
 /**
- * Opération utilisateur
+ * Opération simplifiée
  */
 export interface Operation {
   id: string
   type:
     | 'TRANSFER'
+    | 'TRANSFER_TOKEN'
     | 'WITHDRAW'
     | 'KYC'
     | 'IBAN_CREATE'
     | 'SIGN_MESSAGE'
     | 'ENABLE_RECOVERY'
     | 'CANCEL_RECOVERY'
-  status: 'pending' | 'completed' | 'failed' | 'executed'
+    | 'AAVE_SUPPLY'
+    | 'AAVE_WITHDRAW'
+    | 'SWAP'
+  status: 'pending' | 'completed' | 'failed' | 'executed' | 'confirmed'
   amount?: number
   createdAt: string
   safeOperation?: {
@@ -86,73 +209,11 @@ export interface Operation {
 }
 
 /**
- * Balance utilisateur
+ * Balance simplifiée
  */
 export interface Balance {
   amount: number
   symbol: string
-  usdValue?: number
-}
-
-/**
- * Réponse des adresses de portefeuille
- */
-export interface WalletAddressesResponse {
-  addresses: string[]
-  defaultAddress: string
-}
-
-/**
- * Réponse des chain IDs supportés
- */
-export interface SupportedChainIdsResponse {
-  chainIds: number[]
-  defaultChainId: number
-}
-
-/**
- * Réponse des opérations utilisateur
- */
-export interface UserOperationsResponse {
-  operations: Operation[]
-  pagination?: {
-    page: number
-    limit: number
-    total: number
-  }
-}
-
-/**
- * Réponse des transactions
- */
-export interface TransactionsResponse {
-  transactions: Transaction[]
-  pagination?: {
-    page: number
-    limit: number
-    total: number
-  }
-}
-
-/**
- * Réponse des détails utilisateur
- */
-export interface UserDetailsResponse {
-  user: User
-}
-
-/**
- * Réponse des détails de transaction
- */
-export interface TransactionDetailsResponse {
-  transaction: Transaction
-}
-
-/**
- * Réponse des détails d'opération
- */
-export interface OperationDetailsResponse {
-  operation: Operation
   usdValue?: number
 }
 
@@ -161,76 +222,36 @@ export interface OperationDetailsResponse {
 // ============================================================================
 
 /**
- * Configuration IBEX simplifiée
+ * Configuration IBEX
  */
 export interface IbexConfig {
   baseURL: string
   domain: string
-  rpId?: string // Auto-déduit du domain si non fourni
+  rpId?: string
   defaultChainId?: number
   timeout?: number
   retries?: number
 }
 
-// ============================================================================
-// API RESPONSES
-// ============================================================================
-
 /**
- * Réponse d'authentification
+ * Configuration du cache
  */
-export interface AuthResponse {
-  access_token: string
-  refresh_token?: string
-  expires_in?: number
-  token_type?: string
-  issuer?: string
-  audience?: string
-  subject?: string
-  roles?: string[]
-  keyName?: string
-  keyDisplayName?: string
-  userOpHash?: string
-  transactionHash?: string
+export interface CacheConfig {
+  enableMemoryCache?: boolean
+  enableSessionStorage?: boolean
+  enablePersistentStorage?: boolean
+  defaultTTL?: number
+  maxSize?: number
 }
 
 /**
- * Détails utilisateur depuis /v1/users/me
- * Conforme au schéma OpenAPI
+ * Configuration WebSocket
  */
-export interface UserDetails {
-  id: string
-  ky: string // Statut KYC (0-5)
-  signers: Array<{
-    id: string
-    safes: Array<{
-      address: string
-      threshold: number
-      iban?: {
-        chainId: number
-        iban?: string
-        bic?: string
-      }
-    }>
-  }>
-}
-
-/**
- * Réponse des balances
- */
-export interface BalanceResponse {
-  balance: string
-  tokens?: unknown[]
-  totalValueUsd?: number
-  lastUpdated?: string
-}
-
-/**
- * Réponse des transactions
- */
-export interface TransactionResponse {
-  data: unknown[]
-  pagination?: unknown
+export interface WebSocketConfig {
+  url?: string
+  reconnectAttempts?: number
+  reconnectDelay?: number
+  heartbeatInterval?: number
 }
 
 // ============================================================================
@@ -274,70 +295,8 @@ export interface WebAuthnOptions {
 }
 
 // ============================================================================
-// SAFE OPERATIONS
-// ============================================================================
-
-/**
- * Requête d'opération Safe
- */
-export interface SafeOperationRequest {
-  safeAddress: string
-  chainId: number
-  operations: SafeOperationInput[]
-}
-
-/**
- * Réponse de préparation d'opération Safe
- */
-export interface SafeOperationResponse {
-  credentialRequestOptions: WebAuthnOptions
-  operationId?: string
-}
-
-/**
- * Input d'opération Safe
- */
-export interface SafeOperationInput {
-  type:
-    | 'TRANSFER_EURe'
-    | 'MONERIUM_CREATE_IBAN'
-    | 'MONERIUM_WITHDRAW_EURe'
-    | 'SIGN_MESSAGE'
-    | 'ENABLE_RECOVERY'
-    | 'CANCEL_RECOVERY'
-  to?: string
-  amount?: string
-  iban?: string
-  label?: string
-  recipientInfo?: RecipientInfo
-  message?: string
-  firstName?: string
-  lastName?: string
-  birthDate?: string
-  birthCity?: string
-  birthCountry?: string
-}
-
-/**
- * Informations du destinataire
- */
-export interface RecipientInfo {
-  firstName: string
-  lastName: string
-  country: string
-}
-
-// ============================================================================
 // KYC
 // ============================================================================
-
-/**
- * Réponse KYC iframe
- */
-export interface KycResponse {
-  chatbotURL: string
-  sessionId: string
-}
 
 /**
  * Statut KYC
@@ -359,24 +318,6 @@ export interface KycStatusInfo {
   description?: string
   requiredActions?: string[]
   updatedAt?: string
-}
-
-// ============================================================================
-// IBEX SAFE
-// ============================================================================
-
-/**
- * Données utilisateur privées
- */
-export interface UserPrivateData {
-  [key: string]: unknown
-}
-
-/**
- * Réponse de sauvegarde des données
- */
-export interface SaveUserDataResponse {
-  success: boolean
 }
 
 // ============================================================================
@@ -403,11 +344,11 @@ export interface ApiResponse<T = unknown> {
 }
 
 // ============================================================================
-// OPTIONS ET CONFIGURATION
+// OPTIONS ET UTILITAIRES
 // ============================================================================
 
 /**
- * Options pour les requêtes de transactions
+ * Options pour les requêtes de transactions (simplifié)
  */
 export interface TransactionOptions {
   address?: string
@@ -420,65 +361,15 @@ export interface TransactionOptions {
 }
 
 /**
- * Options pour les requêtes de balances
+ * Options pour les requêtes de balances (simplifié)
  */
 export interface BalanceOptions {
   address?: string
   tokens?: string[]
 }
 
-// ============================================================================
-// TYPES MANQUANTS POUR L'INDEX
-// ============================================================================
-
 /**
- * Configuration du cache
- */
-export interface CacheConfig {
-  enableMemoryCache?: boolean
-  enableSessionStorage?: boolean
-  enablePersistentStorage?: boolean
-  defaultTTL?: number
-  maxSize?: number
-}
-
-/**
- * Configuration WebSocket
- */
-export interface WebSocketConfig {
-  url?: string
-  reconnectAttempts?: number
-  reconnectDelay?: number
-  heartbeatInterval?: number
-}
-
-/**
- * Réponse iframe KYC
- */
-export interface IframeResponse {
-  chatbotURL: string
-  sessionId: string
-}
-
-/**
- * Réponse des chain IDs
- */
-export interface ChainIdsResponse {
-  defaultChainId: number
-  supportedChainIds: number[]
-}
-
-/**
- * Informations de portefeuille
- */
-export interface WalletInfo {
-  address: string
-  chainId: number
-  isPrimary: boolean
-}
-
-/**
- * Réponse historique des transactions
+ * Réponse historique des transactions (simplifié)
  */
 export interface TransactionsHistoryResponse {
   data: Transaction[]
@@ -506,132 +397,4 @@ export interface TransactionsOptions {
   endDate?: string
   limit?: number
   page?: number
-}
-
-/**
- * Paramètres de transfert
- */
-export interface TransferParams {
-  to: string
-  amount: string
-  safeAddress: string
-  chainId: number
-}
-
-/**
- * Paramètres de retrait
- */
-export interface WithdrawParams {
-  to: string
-  amount: string
-  label: string
-  recipientInfo: {
-    firstName: string
-    lastName: string
-    country: string
-  }
-  safeAddress: string
-  chainId: number
-}
-
-/**
- * Paramètres de signature de message
- */
-export interface SignMessageParams {
-  message: string
-  safeAddress: string
-  chainId: number
-}
-
-/**
- * Paramètres d'activation de récupération
- */
-export interface EnableRecoveryParams {
-  firstName: string
-  lastName: string
-  birthDate: string
-  birthCity: string
-  birthCountry: string
-  safeAddress: string
-  chainId: number
-}
-
-/**
- * Réponse du statut de récupération
- */
-export interface RecoveryStatusResponse {
-  recoveryEnabled: boolean
-  safeAddress: string
-  pendingRecovery: boolean
-  canExecute: boolean
-  recoveryAddress?: string
-  delay?: number
-  executeAfter?: string
-}
-
-/**
- * Réponse de validation d'email
- */
-export interface ValidateEmailResponse {
-  success: boolean
-  message?: string
-}
-
-/**
- * Paramètres de confirmation d'email
- */
-export interface ConfirmEmailParams {
-  email: string
-  code: string
-  externalUserId: string
-  userDataName?: string
-  optinNews?: boolean
-  optinNotifications?: boolean
-}
-
-/**
- * Réponse des balances
- */
-export interface BalancesResponse {
-  balances: Balance[]
-  total: number
-}
-
-/**
- * Paramètres de transactions
- */
-export interface TransactionsParams {
-  address?: string
-  startDate?: string
-  endDate?: string
-  limit?: number
-  page?: number
-}
-
-// ============================================================================
-// TYPES LEGACY (pour compatibilité)
-// ============================================================================
-
-/**
- * @deprecated Utilisez User à la place
- */
-export interface UserDetailsLegacy extends User {}
-
-/**
- * @deprecated Utilisez Transaction[] à la place
- */
-export interface TransactionResponseLegacy {
-  data: unknown[]
-  pagination?: unknown
-}
-
-/**
- * @deprecated Utilisez Operation[] à la place
- */
-export interface SafeOperation {
-  id: string
-  type: string
-  status: string
-  createdAt: string
-  data?: unknown
 }

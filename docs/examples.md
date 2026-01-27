@@ -73,7 +73,7 @@ function LoginPage() {
   const getErrorMessage = (error: string) => {
     switch (error) {
       case 'NotSupportedError':
-        return "Votre navigateur ne supporte pas l'authentification moderne. Veuillez utiliser un navigateur récent."
+        return 'Votre navigateur ne supporte pas WebAuthn. Veuillez utiliser un navigateur récent.'
       case 'NotAllowedError':
         return "Authentification refusée. Veuillez réessayer et autoriser l'authentification."
       case 'SecurityError':
@@ -187,9 +187,9 @@ function LoginPage() {
               <strong>IBAN :</strong> {user.iban.status}
             </p>
           )}
-          {user.wallet && (
+          {wallet && (
             <p>
-              <strong>Portefeuille :</strong> {user.wallet.address}
+              <strong>Portefeuille :</strong> {wallet.address}
             </p>
           )}
         </div>
@@ -246,8 +246,21 @@ function FinancialDashboard() {
     withdraw,
     refresh,
     clearError,
-    getKycStatusLabel,
+    wallet,
   } = useIbex()
+
+  // Fonction utilitaire pour obtenir le libellé du statut KYC
+  const getKycStatusLabel = (level: number): string => {
+    const labels: Record<number, string> = {
+      0: 'Non démarré',
+      1: 'En cours',
+      2: 'Dossier envoyé',
+      3: 'Document manquant',
+      4: 'Refusé',
+      5: 'Accepté',
+    }
+    return labels[level] || 'Inconnu'
+  }
 
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
@@ -478,8 +491,8 @@ export default FinancialDashboard
 
 - ✅ Dashboard complet avec toutes les fonctionnalités
 - ✅ Actualisation automatique des données
-- ✅ Formatage intelligent des données
-- ✅ Interface utilisateur moderne
+- ✅ Formatage des données
+- ✅ Support des nouvelles opérations v1.1
 
 ---
 
@@ -843,6 +856,348 @@ export default ReceiveMoney
 - ✅ Copie dans le presse-papiers
 - ✅ Instructions claires pour l'utilisateur
 - ✅ Interface intuitive
+
+---
+
+## Nouvelles fonctionnalités v1.1
+
+### Transfert de token ERC20
+
+```tsx
+// src/components/TransferToken.tsx
+import React, { useState } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
+
+function TransferToken() {
+  const { sdk, wallet } = useIbex()
+  const [tokenAddress, setTokenAddress] = useState('')
+  const [to, setTo] = useState('')
+  const [amount, setAmount] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleTransfer = async () => {
+    if (!wallet) return
+
+    setLoading(true)
+    try {
+      await sdk.transferToken({
+        safeAddress: wallet.address,
+        chainId: wallet.chainId,
+        tokenAddress,
+        to,
+        amount,
+      })
+      alert('Transfert réussi !')
+    } catch (error) {
+      alert('Erreur lors du transfert')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Transférer un token ERC20</h3>
+      <input
+        type="text"
+        placeholder="Adresse du token"
+        value={tokenAddress}
+        onChange={e => setTokenAddress(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Adresse destinataire"
+        value={to}
+        onChange={e => setTo(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Montant"
+        value={amount}
+        onChange={e => setAmount(e.target.value)}
+      />
+      <button onClick={handleTransfer} disabled={loading}>
+        {loading ? 'En cours...' : 'Transférer'}
+      </button>
+    </div>
+  )
+}
+```
+
+### Opérations AAVE
+
+```tsx
+// src/components/AaveOperations.tsx
+import React, { useState } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
+
+function AaveOperations() {
+  const { sdk, wallet } = useIbex()
+  const [amount, setAmount] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSupply = async () => {
+    if (!wallet) return
+
+    setLoading(true)
+    try {
+      await sdk.aaveSupply({
+        safeAddress: wallet.address,
+        chainId: wallet.chainId,
+        amount,
+        assetTicker: 'EURe',
+      })
+      alert('Dépôt réussi !')
+    } catch (error) {
+      alert('Erreur lors du dépôt')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (!wallet) return
+
+    setLoading(true)
+    try {
+      await sdk.aaveWithdraw({
+        safeAddress: wallet.address,
+        chainId: wallet.chainId,
+        amount,
+        assetTicker: 'EURe',
+      })
+      alert('Retrait réussi !')
+    } catch (error) {
+      alert('Erreur lors du retrait')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Opérations AAVE</h3>
+      <input
+        type="text"
+        placeholder="Montant"
+        value={amount}
+        onChange={e => setAmount(e.target.value)}
+      />
+      <button onClick={handleSupply} disabled={loading}>
+        Dépôt
+      </button>
+      <button onClick={handleWithdraw} disabled={loading}>
+        Retrait
+      </button>
+    </div>
+  )
+}
+```
+
+### Swap de tokens
+
+```tsx
+// src/components/SwapTokens.tsx
+import React, { useState } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
+
+function SwapTokens() {
+  const { sdk, wallet } = useIbex()
+  const [fromToken, setFromToken] = useState('')
+  const [toToken, setToToken] = useState('')
+  const [amount, setAmount] = useState('')
+  const [quote, setQuote] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleGetQuote = async () => {
+    if (!wallet) return
+
+    setLoading(true)
+    try {
+      const result = await sdk.getSwapQuote({
+        fromToken,
+        toToken,
+        amount,
+        blockchainId: wallet.chainId,
+      })
+      setQuote(result)
+    } catch (error) {
+      alert('Erreur lors de la récupération de la quote')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSwap = async () => {
+    if (!wallet || !quote) return
+
+    setLoading(true)
+    try {
+      await sdk.swapFromQuote({
+        safeAddress: wallet.address,
+        chainId: wallet.chainId,
+        quoteId: quote.quoteId,
+      })
+      alert('Swap exécuté !')
+    } catch (error) {
+      alert('Erreur lors du swap')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Swap de tokens</h3>
+      <input
+        type="text"
+        placeholder="Token source"
+        value={fromToken}
+        onChange={e => setFromToken(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Token destination"
+        value={toToken}
+        onChange={e => setToToken(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Montant"
+        value={amount}
+        onChange={e => setAmount(e.target.value)}
+      />
+      <button onClick={handleGetQuote} disabled={loading}>
+        Obtenir quote
+      </button>
+      {quote && (
+        <div>
+          <p>
+            Vous recevrez: {quote.toAmount} {quote.toToken.symbol}
+          </p>
+          <button onClick={handleSwap} disabled={loading}>
+            Exécuter swap
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+### Batch operations
+
+```tsx
+// src/components/BatchOperations.tsx
+import React, { useState } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
+
+function BatchOperations() {
+  const { sdk, wallet } = useIbex()
+  const [loading, setLoading] = useState(false)
+
+  const handleBatch = async () => {
+    if (!wallet) return
+
+    setLoading(true)
+    try {
+      // Exécuter le batch directement (prépare et exécute automatiquement avec WebAuthn)
+      const result = await sdk.executeBatch({
+        safeAddress: wallet.address,
+        chainId: wallet.chainId,
+        operations: [
+          {
+            type: 'TRANSFER_TOKEN',
+            tokenAddress: '0x...',
+            to: '0x...',
+            amount: '100',
+          },
+          {
+            type: 'AAVE_SUPPLY',
+            amount: '500',
+            assetTicker: 'EURe',
+          },
+        ],
+      })
+      alert('Batch exécuté !')
+    } catch (error) {
+      alert("Erreur lors de l'exécution du batch")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3>Batch Operations</h3>
+      <button onClick={handleBatch} disabled={loading}>
+        {loading ? 'En cours...' : 'Exécuter batch'}
+      </button>
+    </div>
+  )
+}
+```
+
+### Pools AAVE
+
+```tsx
+// src/components/Pools.tsx
+import React, { useEffect, useState } from 'react'
+import { useIbex } from '@absconse/ibex-sdk'
+
+function Pools() {
+  const { sdk, wallet } = useIbex()
+  const [pools, setPools] = useState<any[]>([])
+  const [poolBalances, setPoolBalances] = useState<any[]>([])
+
+  useEffect(() => {
+    const loadPools = async () => {
+      if (!wallet) return
+
+      try {
+        const poolsData = await sdk.getPools(wallet.chainId)
+        setPools(poolsData.pools)
+
+        const balancesData = await sdk.getPoolBalances({
+          address: wallet.address,
+          blockchainId: wallet.chainId,
+        })
+        setPoolBalances(balancesData.balances)
+      } catch (error) {
+        console.error('Erreur:', error)
+      }
+    }
+
+    loadPools()
+  }, [sdk, wallet])
+
+  return (
+    <div>
+      <h3>Pools AAVE</h3>
+      <div>
+        <h4>Pools disponibles</h4>
+        {pools.map(pool => (
+          <div key={pool.id}>
+            <p>
+              {pool.name} - APY: {pool.apy}%
+            </p>
+          </div>
+        ))}
+      </div>
+      <div>
+        <h4>Mes positions</h4>
+        {poolBalances.map(balance => (
+          <div key={balance.poolId}>
+            <p>
+              Pool: {balance.poolId} - Balance: {balance.balance}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
 
 ---
 

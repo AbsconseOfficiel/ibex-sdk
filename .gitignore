@@ -102,3 +102,22 @@ $RECYCLE.BIN/
 
 # TypeScript
 *.tsbuildinfo
+
+# Generated files
+src/generated/
+orval.config.ts
+custom-instance.ts
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+*.der
+*.keystore
+*.pfx
+*.sqlite
+*.db
+*.bak
+*.sql
+.env.*
+*.env

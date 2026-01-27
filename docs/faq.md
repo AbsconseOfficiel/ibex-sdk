@@ -29,7 +29,7 @@
 
 ### Q: Pourquoi je vois encore des requêtes API après l'optimisation ?
 
-**R:** C'est normal ! L'architecture optimisée utilise :
+**R:** C'est normal ! L'architecture utilise :
 
 - **1 requête API** : `getUserOperations()` pour les opérations initiales
 - **WebSocket** : Pour toutes les mises à jour temps réel
@@ -41,7 +41,7 @@
 
 ### Q: Comment fonctionne l'architecture hybride ?
 
-**R:** L'architecture optimisée suit ce flux :
+**R:** L'architecture suit ce flux :
 
 ```
 1. Connexion → API REST (opérations initiales)
@@ -53,8 +53,8 @@
 
 - ✅ Minimum de requêtes API
 - ✅ Mises à jour temps réel
-- ✅ Performance optimisée
-- ✅ Conforme à la documentation IBEX
+- ✅ Performance améliorée
+- ✅ Conforme à l'OpenAPI v1.1
 
 ---
 
@@ -434,6 +434,135 @@ function WithdrawComponent() {
 
 ---
 
+## Nouvelles fonctionnalités v1.1
+
+### Q: Comment transférer un token ERC20 générique ?
+
+**R:** Utilisez `transferToken()` au lieu de `transfer()` :
+
+```typescript
+const { sdk, wallet } = useIbex()
+
+await sdk.transferToken({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  tokenAddress: '0x...', // Adresse du token ERC20
+  to: '0x...',
+  amount: '100',
+})
+```
+
+### Q: Comment utiliser les pools AAVE ?
+
+**R:** Utilisez les nouvelles méthodes pour les pools :
+
+```typescript
+const { sdk } = useIbex()
+
+// Lister les pools
+const pools = await sdk.getPools(blockchainId)
+
+// Voir mes positions
+const balances = await sdk.getPoolBalances({
+  address: wallet.address,
+  blockchainId: 100,
+})
+
+// Dépôt
+await sdk.aaveSupply({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  amount: '1000',
+  assetTicker: 'EURe',
+})
+
+// Retrait
+await sdk.aaveWithdraw({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  amount: '500',
+  assetTicker: 'EURe',
+})
+```
+
+### Q: Comment exécuter un swap de tokens ?
+
+**R:** Utilisez le processus en deux étapes :
+
+```typescript
+const { sdk, wallet } = useIbex()
+
+// 1. Obtenir une quote
+const quote = await sdk.getSwapQuote({
+  fromToken: '0x...',
+  toToken: '0x...',
+  amount: '100',
+  blockchainId: wallet.chainId,
+})
+
+// 2. Exécuter le swap
+await sdk.swapFromQuote({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  quoteId: quote.quoteId,
+})
+```
+
+### Q: Comment utiliser les batch operations ?
+
+**R:** Préparez puis exécutez le batch :
+
+```typescript
+const { sdk, wallet } = useIbex()
+
+// Exécuter le batch directement (prépare et exécute automatiquement avec WebAuthn)
+const result = await sdk.executeBatch({
+  safeAddress: wallet.address,
+  chainId: wallet.chainId,
+  operations: [
+    { type: 'TRANSFER_TOKEN', tokenAddress: '0x...', to: '0x...', amount: '100' },
+    { type: 'AAVE_SUPPLY', amount: '500', assetTicker: 'EURe' },
+  ],
+})
+
+// Suivre le statut de l'opération
+const status = await sdk.getOperationStatus(result.userOpHash)
+```
+
+### Q: Le format de getUserOperations() a changé, comment l'utiliser ?
+
+**R:** Le format est maintenant groupé par Safe address :
+
+```typescript
+// ❌ Ancien format (v1.0)
+const operations = await sdk.getUserOperations()
+operations.data.forEach(op => { ... })
+
+// ✅ Nouveau format (v1.1)
+const operations = await sdk.getUserOperations()
+// Format: { "0x...": [Operation[], ...], "0x...": [Operation[], ...] }
+Object.entries(operations.data).forEach(([safeAddress, ops]) => {
+  console.log(`Safe ${safeAddress}:`, ops.length, 'opérations')
+  ops.forEach(op => { ... })
+})
+```
+
+### Q: Comment utiliser signIn() avec les nouvelles options ?
+
+**R:** Passez les options pour inclure des données supplémentaires :
+
+```typescript
+const { signIn } = useIbex()
+
+await signIn({
+  includeBalance: true, // Inclure les balances
+  includeTransactions: true, // Inclure les transactions
+  includeUserdata: true, // Inclure les données utilisateur
+})
+```
+
+---
+
 ## Personnalisation
 
 ### Q: Comment créer mes propres composants ?
@@ -535,7 +664,7 @@ function TransactionCard() {
 1. **Lazy loading** : Chargez les données seulement quand nécessaire
 2. **Debouncing** : Évitez les appels API trop fréquents
 3. **Memoization** : Utilisez `useMemo` et `useCallback`
-4. **Rafraîchissement intelligent** : Utilisez `refresh` seulement quand nécessaire
+4. **Rafraîchissement** : Utilisez `refresh` seulement quand nécessaire
 
 </td>
 <td width="50%">
@@ -621,7 +750,7 @@ const config = {
   // Le SDK gère automatiquement les logs de debug
 }
 
-;<IbexProvider config={config}>
+<IbexProvider config={config}>
   <YourApp />
 </IbexProvider>
 ```

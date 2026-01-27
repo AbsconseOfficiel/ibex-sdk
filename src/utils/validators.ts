@@ -23,7 +23,7 @@
  * isValidAddress("invalid") // false
  */
 export function isValidAddress(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
+  return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
 /**
@@ -37,7 +37,7 @@ export function isValidAddress(address: string): boolean {
  */
 export function isValidIban(iban: string): boolean {
   // Validation basique d'IBAN (format général)
-  return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/.test(iban.replace(/\s/g, ''));
+  return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/.test(iban.replace(/\s/g, ''))
 }
 
 // ============================================================================
@@ -58,8 +58,8 @@ export function isValidAmount(
   amount: number,
   options: { min?: number; max?: number } = {}
 ): boolean {
-  const { min = 0, max = Number.MAX_SAFE_INTEGER } = options;
-  return !isNaN(amount) && amount >= min && amount <= max;
+  const { min = 0, max = Number.MAX_SAFE_INTEGER } = options
+  return !isNaN(amount) && amount >= min && amount <= max
 }
 
 /**
@@ -72,8 +72,8 @@ export function isValidAmountString(
   amount: string,
   options: { min?: number; max?: number } = {}
 ): boolean {
-  const numAmount = parseFloat(amount);
-  return !isNaN(numAmount) && isValidAmount(numAmount, options);
+  const numAmount = parseFloat(amount)
+  return !isNaN(numAmount) && isValidAmount(numAmount, options)
 }
 
 // ============================================================================
@@ -90,8 +90,8 @@ export function isValidAmountString(
  * isValidEmail("invalid") // false
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
 }
 
 // ============================================================================
@@ -104,28 +104,28 @@ export function isValidEmail(email: string): boolean {
  * @returns True si la configuration est valide
  */
 export function isValidConfig(config: unknown): config is {
-  baseURL: string;
-  domain: string;
-  rpId?: string;
-  defaultChainId?: number;
-  timeout?: number;
-  retries?: number;
+  baseURL: string
+  domain: string
+  rpId?: string
+  defaultChainId?: number
+  timeout?: number
+  retries?: number
 } {
-  if (!config || typeof config !== 'object') return false;
+  if (!config || typeof config !== 'object') return false
 
-  const configData = config as Record<string, unknown>;
+  const configData = config as Record<string, unknown>
 
-  if (!configData.baseURL || typeof configData.baseURL !== 'string') return false;
-  if (!configData.domain || typeof configData.domain !== 'string') return false;
+  if (!configData.baseURL || typeof configData.baseURL !== 'string') return false
+  if (!configData.domain || typeof configData.domain !== 'string') return false
 
   // Vérifier que l'URL est valide
   try {
-    new URL(configData.baseURL);
+    new URL(configData.baseURL)
   } catch {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 // ============================================================================
@@ -138,14 +138,14 @@ export function isValidConfig(config: unknown): config is {
  * @returns True si les données sont valides
  */
 export function isValidUserData(data: unknown): boolean {
-  if (!data || typeof data !== 'object') return false;
+  if (!data || typeof data !== 'object') return false
 
   // Vérifier qu'il n'y a pas de clés vides
   for (const key in data) {
-    if (key.trim() === '') return false;
+    if (key.trim() === '') return false
   }
 
-  return true;
+  return true
 }
 
 // ============================================================================
@@ -158,33 +158,58 @@ export function isValidUserData(data: unknown): boolean {
  * @returns True si l'opération est valide
  */
 export function isValidSafeOperation(operation: unknown): boolean {
-  if (!operation || typeof operation !== 'object') return false;
+  if (!operation || typeof operation !== 'object') return false
 
   const validTypes = [
-    'TRANSFER_EURe',
+    'TRANSFER_EURe', // @deprecated
+    'TRANSFER_TOKEN',
     'MONERIUM_CREATE_IBAN',
     'MONERIUM_WITHDRAW_EURe',
     'SIGN_MESSAGE',
     'ENABLE_RECOVERY',
     'CANCEL_RECOVERY',
-  ];
+    'AAVE_SUPPLY',
+    'AAVE_WITHDRAW',
+    'SWAP_FROM_QUOTE',
+  ]
 
-  const opData = operation as Record<string, unknown>;
+  const opData = operation as Record<string, unknown>
 
-  if (!validTypes.includes(String(opData.type))) return false;
+  if (!validTypes.includes(String(opData.type))) return false
 
   // Vérifier les champs requis selon le type
   switch (opData.type) {
     case 'TRANSFER_EURe':
-      return Boolean(opData.to && opData.amount);
+      return Boolean(opData.to && opData.amount)
+    case 'TRANSFER_TOKEN':
+      return Boolean(opData.tokenAddress && opData.to && opData.amount)
     case 'MONERIUM_WITHDRAW_EURe':
-      return Boolean(opData.amount && opData.to); // 'to' contient l'IBAN
+      return Boolean(opData.amount && opData.to && opData.recipientInfo)
     case 'SIGN_MESSAGE':
-      return Boolean(opData.message);
+      return Boolean(opData.message)
     case 'ENABLE_RECOVERY':
-      return Boolean(opData.firstName && opData.lastName && opData.birthDate);
+      return Boolean(
+        opData.firstName &&
+          opData.lastName &&
+          opData.birthDate &&
+          opData.birthCity &&
+          opData.birthCountry
+      )
+    case 'AAVE_SUPPLY':
+      return Boolean(
+        opData.amount && (opData.assetTicker || (opData.tokenAddress && opData.decimals))
+      )
+    case 'AAVE_WITHDRAW':
+      return Boolean(
+        opData.amount && (opData.assetTicker || (opData.tokenAddress && opData.decimals))
+      )
+    case 'SWAP_FROM_QUOTE':
+      return Boolean(opData.quoteId)
+    case 'MONERIUM_CREATE_IBAN':
+    case 'CANCEL_RECOVERY':
+      return true
     default:
-      return true;
+      return true
   }
 }
 
@@ -198,13 +223,13 @@ export function isValidSafeOperation(operation: unknown): boolean {
  * @returns True si les paramètres sont valides
  */
 export function isValidTransactionParams(params: unknown): boolean {
-  if (!params || typeof params !== 'object') return false;
+  if (!params || typeof params !== 'object') return false
 
-  const paramsData = params as Record<string, unknown>;
+  const paramsData = params as Record<string, unknown>
 
   // Vérifier les dates si présentes
-  if (paramsData.startDate && !isValidDate(String(paramsData.startDate))) return false;
-  if (paramsData.endDate && !isValidDate(String(paramsData.endDate))) return false;
+  if (paramsData.startDate && !isValidDate(String(paramsData.startDate))) return false
+  if (paramsData.endDate && !isValidDate(String(paramsData.endDate))) return false
 
   // Vérifier la pagination
   if (
@@ -213,14 +238,14 @@ export function isValidTransactionParams(params: unknown): boolean {
       Number(paramsData.limit) < 1 ||
       Number(paramsData.limit) > 100)
   )
-    return false;
+    return false
   if (
     paramsData.page &&
     (!Number.isInteger(Number(paramsData.page)) || Number(paramsData.page) < 1)
   )
-    return false;
+    return false
 
-  return true;
+  return true
 }
 
 /**
@@ -229,9 +254,9 @@ export function isValidTransactionParams(params: unknown): boolean {
  * @returns True si la date est valide
  */
 export function isValidDate(date: string): boolean {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(date)) return false;
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  if (!dateRegex.test(date)) return false
 
-  const parsedDate = new Date(date);
-  return parsedDate instanceof Date && !isNaN(parsedDate.getTime());
+  const parsedDate = new Date(date)
+  return parsedDate instanceof Date && !isNaN(parsedDate.getTime())
 }

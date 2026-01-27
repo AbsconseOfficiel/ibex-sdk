@@ -3,11 +3,12 @@
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 /**
- * Export du service de récupération IBEX
+ * Export du service de récupération IBEX - OpenAPI v1.1
  */
 
 export { RecoveryService } from './recovery.service'
 export type {
+  RecoveryOperation,
   RecoveryStatusResponse,
   EnableRecoveryParams,
   RecoveryResponse,

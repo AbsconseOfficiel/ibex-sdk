@@ -3,7 +3,7 @@
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 /**
- * Service de gestion des utilisateurs IBEX
+ * Service de gestion des utilisateurs IBEX - OpenAPI v1.1
  *
  * Gère:
  * - Récupération des profils utilisateur
@@ -47,19 +47,22 @@ export class UserService {
   }
 
   /**
-   * Récupère les opérations de l'utilisateur authentifié
-   * GET /v1/users/me/operations
+   * Récupère les opérations de l'utilisateur authentifié groupées par Safe (v1.1)
+   * GET /v1.1/users/me/operations
    *
-   * @returns Toutes les opérations onchain liées aux wallets de l'utilisateur
+   * @returns Toutes les opérations onchain liées aux wallets de l'utilisateur, groupées par adresse Safe
    *
    * @example
    * ```typescript
    * const operations = await userService.getUserOperations();
-   * console.log(operations.data.length); // Nombre d'opérations
+   * // Les opérations sont groupées par adresse Safe
+   * for (const [safeAddress, ops] of Object.entries(operations.data)) {
+   *   console.log(`Safe ${safeAddress}: ${ops.length} opérations`);
+   * }
    * ```
    */
   async getUserOperations(): Promise<UserOperationsResponse> {
-    return this.http.request<UserOperationsResponse>('/v1/users/me/operations', {
+    return this.http.request<UserOperationsResponse>('/v1.1/users/me/operations', {
       cache: true,
       cacheTTL: 30000, // 30 secondes
     })
@@ -107,11 +110,17 @@ export class UserService {
    * Récupère les informations d'un utilisateur par son ID externe
    * GET /v1/users/{id}
    *
+   * **Note importante**: Selon l'OpenAPI, cet endpoint requiert `x-api-key` (server-side).
+   * Le SDK l'utilise actuellement avec JWT (Bearer token). Si votre backend attend
+   * strictement `x-api-key`, cet endpoint ne fonctionnera pas depuis le frontend.
+   * Pour un usage server-side, configurez votre HttpClient avec un API key.
+   *
    * @param externalUserId - ID externe de l'utilisateur
    * @returns Informations de l'utilisateur pour le rpId donné
    *
    * @example
    * ```typescript
+   * // Usage avec JWT (frontend)
    * const user = await userService.getUserById('user-123');
    * console.log(user.ky); // Statut KYC
    * ```

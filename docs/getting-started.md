@@ -80,7 +80,7 @@
 
 ### Comprendre le flux de données
 
-L'IBEX SDK utilise une **architecture hybride optimisée** :
+L'IBEX SDK utilise une **architecture hybride** :
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -101,8 +101,8 @@ L'IBEX SDK utilise une **architecture hybride optimisée** :
 - ✅ **Données initiales** : API REST (1 seule requête pour les opérations)
 - ✅ **Temps réel** : WebSocket pour toutes les mises à jour
 - ✅ **Efficacité** : Minimum de requêtes API
-- ✅ **Performance** : Mises à jour instantanées
-- ✅ **Conformité** : Suit la documentation IBEX officielle
+- ✅ **Mises à jour instantanées** : Via WebSocket
+- ✅ **Conforme OpenAPI v1.1** : Toutes les fonctionnalités disponibles
 
 ---
 
@@ -439,9 +439,9 @@ export default Dashboard
 **Points clés :**
 
 - ✅ Dashboard complet avec toutes les fonctionnalités
-- ✅ Formatage intelligent des données
+- ✅ Formatage des données
 - ✅ Actions financières intégrées
-- ✅ Interface utilisateur moderne
+- ✅ Support des nouvelles opérations v1.1
 
 ---
 
@@ -449,7 +449,7 @@ export default Dashboard
 
 ### WebAuthn et Passkeys
 
-L'IBEX SDK utilise WebAuthn, une technologie moderne qui remplace les mots de passe :
+L'IBEX SDK utilise WebAuthn, une technologie qui remplace les mots de passe :
 
 <table>
 <tr>
@@ -518,7 +518,7 @@ const { error, clearError } = useIbex()
 const getErrorMessage = (error: string) => {
   switch (error) {
     case 'NotSupportedError':
-      return "Votre navigateur ne supporte pas l'authentification moderne"
+      return 'Votre navigateur ne supporte pas WebAuthn'
     case 'NotAllowedError':
       return "Authentification refusée par l'utilisateur"
     case 'SecurityError':

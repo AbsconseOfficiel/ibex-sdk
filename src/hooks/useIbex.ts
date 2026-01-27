@@ -41,7 +41,7 @@ import { IbexClient } from '../core/client'
 import { WebSocketService } from '../core/websocket'
 import { useIbexConfig } from '../context/IbexProvider'
 import { logger } from '../utils/logger'
-import type { User, Wallet, Balance, Transaction, Operation } from '../types'
+import type { User, Wallet, Balance, Transaction, Operation, SignInOptions } from '../types'
 
 // ============================================================================
 // TYPES
@@ -69,11 +69,15 @@ interface IbexReturn {
   isConnected: boolean
 
   // Actions rapides
-  signIn: () => Promise<void>
+  signIn: (options?: SignInOptions) => Promise<void>
   signUp: (passkeyName?: string) => Promise<void>
   logout: () => Promise<void>
   send: (amount: number, to: string) => Promise<void>
-  withdraw: (amount: number, iban: string) => Promise<void>
+  withdraw: (
+    amount: number,
+    iban: string,
+    recipientInfo?: { firstName: string; lastName: string; country: string }
+  ) => Promise<void>
   receive: () => Promise<string>
   startKyc: (language?: string) => Promise<string>
   refresh: () => Promise<void>
@@ -353,7 +357,9 @@ export function useIbex(): IbexReturn {
       // Charger les opérations initiales
       try {
         const ops = await client.getUserOperations()
-        const operations = (ops.data || [])
+        // v1.1: ops.data est maintenant un Record<string, UserOperation[]> groupé par Safe
+        const allOperations = Object.values(ops.data || {}).flat()
+        const operations = allOperations
           .filter((op: any) => {
             const status = op.safeOperation?.status || op.status
             return status === 'EXECUTED' || status === 'executed'
@@ -381,20 +387,23 @@ export function useIbex(): IbexReturn {
   // ACTIONS PUBLIQUES
   // ========================================================================
 
-  const signIn = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
+  const signIn = useCallback(
+    async (options?: SignInOptions) => {
+      setIsLoading(true)
+      setError(null)
 
-    try {
-      await client.signIn()
-      await loadInitialData()
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Erreur de connexion')
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }, [client, loadInitialData])
+      try {
+        await client.signIn(options)
+        await loadInitialData()
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Erreur de connexion')
+        throw error
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [client, loadInitialData]
+  )
 
   const signUp = useCallback(
     async (passkeyName?: string) => {
@@ -436,6 +445,10 @@ export function useIbex(): IbexReturn {
     }
   }, [client])
 
+  /**
+   * Envoie des EURe vers une adresse
+   * @deprecated Utiliser sdk.safe.transferToken() avec l'adresse du token EURe
+   */
   const send = useCallback(
     async (amount: number, to: string) => {
       if (!data.wallet?.address) throw new Error('Portefeuille non connecté')
@@ -461,7 +474,11 @@ export function useIbex(): IbexReturn {
   )
 
   const withdraw = useCallback(
-    async (amount: number, iban: string) => {
+    async (
+      amount: number,
+      iban: string,
+      recipientInfo?: { firstName: string; lastName: string; country: string }
+    ) => {
       if (!data.wallet?.address) throw new Error('Portefeuille non connecté')
 
       setIsLoading(true)
@@ -473,6 +490,7 @@ export function useIbex(): IbexReturn {
           chainId: data.wallet.chainId,
           amount,
           iban,
+          recipientInfo: recipientInfo || { firstName: '', lastName: '', country: '' },
         })
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Erreur de retrait')
